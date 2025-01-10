@@ -30,6 +30,7 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
                 std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
                           << device->getName() << "' si è spento" << std::endl;
             }
+            updateDeviceConsumption();  // Aggiornamento del consumo quando lo stato cambia
             return;
         }
     }
@@ -59,6 +60,7 @@ void DeviceManager::checkPowerConsumption() {
                 std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
                           << (*it)->getName() << "' è stato spento automaticamente" << std::endl;
                 activeDevices.erase((*it)->getId());
+                updateDeviceConsumption();  // Aggiorna il consumo dopo lo spegnimento
                 
                 // Ricalcola il consumo totale
                 totalConsumption = 0.0;
@@ -85,6 +87,7 @@ void DeviceManager::setTime(const std::string& time) {
         
         // Aggiorna i dispositivi se il tempo avanza
         if (newTime > currentTime) {
+            updateDeviceConsumption();  // Aggiorna il consumo prima del cambio tempo
             for (const auto& device : devices) {
                 device->update(newTime);
                 if (device->getStatus()) {
@@ -96,7 +99,6 @@ void DeviceManager::setTime(const std::string& time) {
                     }
                 }
             }
-            updateDeviceConsumption();
         }
         
         currentTime = newTime;
@@ -110,14 +112,12 @@ void DeviceManager::printConsumption() const {
     std::cout << "[" << getCurrentTimeStamp() << "] Consumo energetico:" << std::endl;
     double totalConsumption = 0.0;
     
-    for (const auto& pair : deviceEnergyConsumption) {
-        const auto& device = std::find_if(devices.begin(), devices.end(),
-            [&](const std::shared_ptr<Device>& d) { return d->getId() == pair.first; });
-        
-        if (device != devices.end()) {
-            std::cout << (*device)->getName() << ": " 
-                      << std::fixed << std::setprecision(2) << pair.second << " kWh" << std::endl;
-            totalConsumption += pair.second;
+    for (const auto& device : devices) {
+        auto it = deviceEnergyConsumption.find(device->getId());
+        if (it != deviceEnergyConsumption.end()) {
+            std::cout << device->getName() << ": " 
+                      << std::fixed << std::setprecision(2) << it->second << " kWh" << std::endl;
+            totalConsumption += it->second;
         }
     }
     
@@ -146,6 +146,7 @@ void DeviceManager::printDeviceConsumption(const std::string& deviceName) const 
 
 void DeviceManager::resetTime() {
     currentTime = 0;
+    initializeDeviceConsumption();  // Reset dei consumi quando si resetta il tempo
     std::cout << "[00:00] Ora reimpostata a 00:00" << std::endl;
 }
 
@@ -194,13 +195,16 @@ std::string DeviceManager::formatSpecificTime(int minutes) const {
 }
 
 void DeviceManager::updateDeviceConsumption() {
-    static int lastUpdateTime = 0;
-    if (currentTime > lastUpdateTime) {
-        double hours = (currentTime - lastUpdateTime) / 60.0;
+    static int lastUpdateTime = currentTime;
+    double hours = (currentTime - lastUpdateTime) / 60.0;
+    
+    if (hours > 0) {
         for (const auto& device : devices) {
-            auto it = deviceEnergyConsumption.find(device->getId());
-            if (it != deviceEnergyConsumption.end()) {
-                it->second += device->calculateConsumption(hours);
+            if (device->getStatus()) {  // Aggiorna solo per i dispositivi attivi
+                auto it = deviceEnergyConsumption.find(device->getId());
+                if (it != deviceEnergyConsumption.end()) {
+                    it->second += device->calculateConsumption(hours);
+                }
             }
         }
         lastUpdateTime = currentTime;
