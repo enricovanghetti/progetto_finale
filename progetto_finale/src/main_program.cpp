@@ -25,6 +25,12 @@ bool parseTime(const std::string& timeStr, int& hours, int& minutes) {
     return true;
 }
 
+// Helper function per verificare il formato del tempo
+bool isTimeFormat(const std::string& str) {
+    int h, m;
+    return parseTime(str, h, m);
+}
+
 int main() {
     DeviceManager manager(3.5);
 
@@ -118,7 +124,7 @@ int main() {
                         manager.checkPowerConsumption();
                     }
                     break;
-                } else if (parseTime(word, std::ignore, std::ignore)) {
+                } else if (isTimeFormat(word)) {
                     timeValues.push_back(word);
                 } else {
                     if (!fullDeviceName.empty()) fullDeviceName += " ";
