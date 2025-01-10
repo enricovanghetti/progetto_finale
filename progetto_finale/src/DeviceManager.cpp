@@ -45,6 +45,32 @@ void DeviceManager::checkPowerConsumption() {
     if (totalConsumption > maxPowerLimit) {
         std::cout << "[" << getCurrentTimeStamp() << "] Warning: potenza massima superata (" 
                   << std::fixed << std::setprecision(1) << totalConsumption << "kW)" << std::endl;
+        
+        // Ordina i dispositivi attivi per ordine di accensione (dal più recente)
+        std::vector<std::shared_ptr<Device>> activeDevicesList;
+        for (const auto& pair : activeDevices) {
+            activeDevicesList.push_back(pair.second);
+        }
+        
+        // Spegni i dispositivi uno alla volta finché non rientri nel limite
+        for (auto it = activeDevicesList.rbegin(); it != activeDevicesList.rend(); ++it) {
+            if ((*it)->getName() != "photovoltaic system") {  // Non spegnere il sistema fotovoltaico
+                (*it)->toggle();  // Spegni il dispositivo
+                std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
+                          << (*it)->getName() << "' è stato spento automaticamente" << std::endl;
+                activeDevices.erase((*it)->getId());
+                
+                // Ricalcola il consumo totale
+                totalConsumption = 0.0;
+                for (const auto& pair : activeDevices) {
+                    totalConsumption += pair.second->getPowerConsumption();
+                }
+                
+                if (totalConsumption <= maxPowerLimit) {
+                    break;  // Esci dal ciclo se siamo rientrati nel limite
+                }
+            }
+        }
     }
 }
 
