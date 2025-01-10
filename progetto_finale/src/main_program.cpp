@@ -36,11 +36,6 @@ int main() {
     manager.addDevice(std::make_shared<ManualDevice>("Fridge", 6, 0.4));
     manager.addDevice(std::make_shared<FCDevice>("Microwave", 7, 0.8, 0.0333));
 
-    const std::vector<std::string> deviceNames = {
-        "Photovoltaic System", "Washing Machine", "Dishwasher",
-        "Heat Pump", "Water Heater", "Fridge", "Microwave"
-    };
-
     std::string command;
     while (true) {
         std::cout << ">> ";
@@ -55,6 +50,7 @@ int main() {
             std::string secondWord;
             iss >> secondWord;
 
+            // Gestione del comando "set time"
             if (secondWord == "time") {
                 std::string timeStr;
                 iss >> timeStr;
@@ -69,59 +65,78 @@ int main() {
                 continue;
             }
 
+            // Raccolta delle parti rimanenti del comando
             std::string rest;
             std::getline(iss, rest);
             std::istringstream restStream(rest);
             
             std::string name = secondWord;
-            std::string state;
-            std::string word;
+            std::string nextWord;
+            std::vector<std::string> timeValues;
 
-            while (restStream >> word) {
-                if (word == "on" || word == "off") {
-                    state = word;
-                    break;
-                }
-                if (!name.empty()) name += " ";
-                name += word;
-            }
-
-            std::string nameLower = toLower(name);
-            std::string originalName;
-            
-            for (const auto& deviceName : deviceNames) {
-                if (toLower(deviceName) == nameLower) {
-                    originalName = deviceName;
-                    break;
-                }
-            }
-
-            if (originalName.empty()) {
-                std::cout << "[Error] Dispositivo non trovato: " << name << "\n";
-                continue;
-            }
-
-            if (state == "on") {
-                std::string at;
-                restStream >> at;
-                if (at == "at") {
-                    std::string timeStr;
-                    restStream >> timeStr;
-                    int hours, minutes;
-                    if (parseTime(timeStr, hours, minutes)) {
-                        manager.toggleDevice(originalName, hours * 60 + minutes);
+            while (restStream >> nextWord) {
+                if (nextWord == "on" || nextWord == "off") {
+                    // Gestione vecchio formato comando
+                    if (nextWord == "on") {
+                        std::string at;
+                        std::string timeStr;
+                        restStream >> at >> timeStr;
+                        if (at == "at" && !timeStr.empty()) {
+                            int hours, minutes;
+                            if (parseTime(timeStr, hours, minutes)) {
+                                manager.toggleDevice(name, hours * 60 + minutes);
+                            } else {
+                                std::cout << "[Error] Formato tempo non valido per 'at'. Usa HH:MM\n";
+                            }
+                        } else {
+                            manager.toggleDevice(name);
+                        }
                     } else {
-                        std::cout << "[Error] Formato tempo non valido per 'at'. Usa HH:MM\n";
+                        manager.toggleDevice(name);
                     }
-                } else {
-                    manager.toggleDevice(originalName);
+                    manager.checkPowerConsumption();
+                    return;
                 }
-                manager.checkPowerConsumption();
-            } else if (state == "off") {
-                manager.toggleDevice(originalName);
-                manager.checkPowerConsumption();
-            } else {
-                std::cout << "[Error] Stato non valido: usa 'on' o 'off'\n";
+                
+                // Se è un formato tempo HH:MM, salvalo
+                int h, m;
+                if (parseTime(nextWord, h, m)) {
+                    timeValues.push_back(nextWord);
+                } else {
+                    if (!name.empty()) name += " ";
+                    name += nextWord;
+                }
+            }
+
+            // Se abbiamo trovato dei valori tempo, trattiamoli come nuovo formato comando
+            if (!timeValues.empty()) {
+                auto device = manager.findDevice(name);
+                if (!device) {
+                    std::cout << "[Error] Dispositivo non trovato: " << name << "\n";
+                    continue;
+                }
+
+                int startHours, startMinutes;
+                parseTime(timeValues[0], startHours, startMinutes);
+                int startTime = startHours * 60 + startMinutes;
+
+                if (timeValues.size() > 1) {
+                    // Caso con orario di stop
+                    int stopHours, stopMinutes;
+                    parseTime(timeValues[1], stopHours, stopMinutes);
+                    int stopTime = stopHours * 60 + stopMinutes;
+                    device->setTimer(startTime, stopTime);
+                } else {
+                    // Solo orario di start
+                    device->setTimer(startTime);
+                }
+
+                std::cout << "[" << manager.formatTime() << "] Impostato timer per '" << name 
+                         << "': accensione alle " << timeValues[0];
+                if (timeValues.size() > 1) {
+                    std::cout << ", spegnimento alle " << timeValues[1];
+                }
+                std::cout << "\n";
             }
         }
         else if (action == "show") {
