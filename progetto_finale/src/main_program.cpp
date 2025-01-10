@@ -95,7 +95,7 @@ int main() {
                         manager.toggleDevice(name);
                     }
                     manager.checkPowerConsumption();
-                    return;
+                    break;
                 }
                 
                 // Se è un formato tempo HH:MM, salvalo
