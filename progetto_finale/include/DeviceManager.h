@@ -1,4 +1,3 @@
-
 #ifndef DEVICEMANAGER_H
 #define DEVICEMANAGER_H
 
@@ -13,6 +12,7 @@ class DeviceManager {
     std::map<int, std::shared_ptr<Device>> activeDevices;
     double maxPowerLimit;
     int currentTime;
+    std::map<int, double> deviceRunningTime;  // Nuovo: per tracciare il tempo di esecuzione
 
 public:
     explicit DeviceManager(double maxPowerLimit);
@@ -23,6 +23,7 @@ public:
     void setTime(const std::string& time);
     void printConsumption() const;
     std::string formatTime() const;
+    double getDeviceRunningTime(int deviceId) const;  // Nuovo: per ottenere il tempo di esecuzione
 };
 
 #endif
