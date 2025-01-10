@@ -14,6 +14,19 @@ void DeviceManager::initializeDeviceConsumption() {
     }
 }
 
+std::string DeviceManager::getCurrentTimeStamp() const {
+    return "[" + formatTime() + "] ";
+}
+
+std::string DeviceManager::formatSpecificTime(int minutes) const {
+    int hours = (minutes / 60) % 24;
+    int mins = minutes % 60;
+    std::ostringstream oss;
+    oss << std::setw(2) << std::setfill('0') << hours << ":"
+        << std::setw(2) << std::setfill('0') << mins;
+    return oss.str();
+}
+
 void DeviceManager::addDevice(const std::shared_ptr<Device>& device) {
     devices.push_back(device);
     deviceEnergyConsumption[device->getId()] = 0.0;
@@ -33,7 +46,60 @@ void DeviceManager::updateDeviceConsumption() {
         auto device = pair.second;
         if (device->getStatus()) {
             deviceEnergyConsumption[device->getId()] += 
-                device->getPowerConsumption() * (1.0/60.0); // Consumo per minuto in kWh
+                device->getPowerConsumption() * (1.0/60.0);
+        }
+    }
+}
+
+void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
+    for (const auto& device : devices) {
+        if (device->getName() == deviceName) {
+            if (startAt != -1) {
+                auto fcDevice = dynamic_cast<FCDevice*>(device.get());
+                if (fcDevice) {
+                    fcDevice->setStartTime(startAt);
+                    fcDevice->toggle();
+                    activeDevices[device->getId()] = device;
+                    std::cout << getCurrentTimeStamp() << "Impostato un timer per il dispositivo '"
+                             << deviceName << "' dalle " << formatTime() << " alle "
+                             << formatSpecificTime(startAt + static_cast<int>(fcDevice->getCycleDuration())) << "\n";
+                    return;
+                }
+            }
+
+            device->toggle();
+            if (device->getStatus()) {
+                activeDevices[device->getId()] = device;
+                std::cout << getCurrentTimeStamp() << "Il dispositivo '" << deviceName << "' si è acceso\n";
+                auto fcDevice = dynamic_cast<FCDevice*>(device.get());
+                if (fcDevice) {
+                    fcDevice->setStartTime(currentTime);
+                }
+            } else {
+                activeDevices.erase(device->getId());
+                std::cout << getCurrentTimeStamp() << "Il dispositivo '" << deviceName << "' si è spento\n";
+            }
+            return;
+        }
+    }
+    std::cout << getCurrentTimeStamp() << "Error: Dispositivo '" << deviceName << "' non trovato\n";
+}
+
+void DeviceManager::checkPowerConsumption() {
+    double totalPower = 0;
+    for (const auto& pair : activeDevices) {
+        totalPower += pair.second->getPowerConsumption();
+    }
+
+    if (totalPower > maxPowerLimit) {
+        std::cout << getCurrentTimeStamp() << "Warning: Consumo totale supera il limite di " 
+                 << maxPowerLimit << " kW!\n";
+        for (auto it = activeDevices.rbegin(); it != activeDevices.rend(); ++it) {
+            if (totalPower <= maxPowerLimit) break;
+            totalPower -= it->second->getPowerConsumption();
+            it->second->toggle();
+            std::cout << getCurrentTimeStamp() << "Il dispositivo '" << it->second->getName() 
+                     << "' è stato spento per rientrare nel limite\n";
         }
     }
 }
@@ -52,73 +118,39 @@ void DeviceManager::setTime(const std::string& time) {
             pair.second->update(currentTime);
         }
     }
-    std::cout << "[Time] Impostato orario a " << formatTime() << "\n";
-}
-
-void DeviceManager::printConsumption() const {
-    std::cout << "\n=== Report Consumo Energetico (00:00 - " << formatTime() << ") ===\n";
-    double totalConsumption = 0.0;
-
-    for (const auto& device : devices) {
-        double consumption = deviceEnergyConsumption.at(device->getId());
-        totalConsumption += consumption;
-        
-        std::cout << device->getName() << ":\n"
-                  << "  Stato: " << (device->getStatus() ? "Attivo" : "Inattivo") << "\n"
-                  << "  Energia " << (consumption < 0 ? "prodotta: " : "consumata: ")
-                  << std::fixed << std::setprecision(2) << std::abs(consumption) << " kWh\n";
-    }
-
-    std::cout << "\nBilancio energetico totale: ";
-    if (totalConsumption < 0) {
-        std::cout << "Produzione netta di " << -totalConsumption << " kWh\n";
-    } else {
-        std::cout << "Consumo netto di " << totalConsumption << " kWh\n";
-    }
-    std::cout << "==========================================\n\n";
-}
-
-void DeviceManager::printDeviceConsumption(const std::string& deviceName) const {
-    auto device = findDevice(deviceName);
-    if (!device) {
-        std::cout << "[Error] Dispositivo non trovato: " << deviceName << "\n";
-        return;
-    }
-
-    double consumption = deviceEnergyConsumption.at(device->getId());
-    std::cout << "\n=== Consumo " << deviceName << " (00:00 - " << formatTime() << ") ===\n"
-              << "Stato: " << (device->getStatus() ? "Attivo" : "Inattivo") << "\n"
-              << "Energia " << (consumption < 0 ? "prodotta: " : "consumata: ")
-              << std::fixed << std::setprecision(2) << std::abs(consumption) << " kWh\n"
-              << "==========================================\n\n";
+    std::cout << getCurrentTimeStamp() << "L'orario attuale è " << formatTime() << "\n";
 }
 
 void DeviceManager::resetTime() {
     currentTime = 0;
     for (const auto& device : devices) {
         if (device->getStatus()) {
-            device->toggle(); // Spegne il dispositivo
+            device->toggle();
         }
     }
     activeDevices.clear();
     initializeDeviceConsumption();
-    std::cout << "[System] Tempo resettato a 00:00\n";
+    std::cout << "[00:00] L'orario attuale è 00:00\n";
 }
 
 void DeviceManager::resetTimers() {
-    deviceTimers.clear();
-    std::cout << "[System] Timer rimossi\n";
+    for (const auto& device : devices) {
+        auto fcDevice = dynamic_cast<FCDevice*>(device.get());
+        if (fcDevice && fcDevice->hasTimer()) {
+            std::cout << getCurrentTimeStamp() << "Rimosso il timer dal dispositivo '" 
+                     << device->getName() << "'\n";
+            fcDevice->clearTimer();
+        }
+    }
 }
 
 void DeviceManager::resetAll() {
     currentTime = 0;
     activeDevices.clear();
-    deviceTimers.clear();
-    initializeDeviceConsumption();
     for (const auto& device : devices) {
         if (device->getStatus()) {
-            device->toggle(); // Spegne il dispositivo
+            device->toggle();
         }
-    }
-    std::cout << "[System] Sistema resettato completamente\n";
-}
+        auto fcDevice = dynamic_cast<FCDevice*>(device.get());
+        if (fcDevice) {
+            fcDevice->clearTimer();
