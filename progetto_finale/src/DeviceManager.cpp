@@ -121,6 +121,7 @@ void DeviceManager::setTime(const std::string& time) {
         }
         
         currentTime = newTime;
+        lastUpdateTime = newTime;  // Aggiungi questa riga per aggiornare lastUpdateTime
         std::cout << "[" << getCurrentTimeStamp() << "] Ora impostata: " << time << std::endl;
     } else {
         std::cout << "[Error] Formato tempo non valido. Usa HH:MM" << std::endl;
