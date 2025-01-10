@@ -24,8 +24,8 @@ public:
     void toggleDevice(const std::string& deviceName, int startAt = -1);
     void checkPowerConsumption();
     void setTime(const std::string& time);
-    void printConsumption() const;
-    void printDeviceConsumption(const std::string& deviceName) const;
+    void printConsumption();  // Rimosso il const
+    void printDeviceConsumption(const std::string& deviceName);  // Rimosso il const
     void resetTime();
     void resetTimers();
     void resetAll();
