@@ -15,6 +15,7 @@ class DeviceManager {
     std::vector<std::shared_ptr<Device>> deviceActivationOrder;  // Per tenere traccia dell'ordine di attivazione
     double maxPowerLimit;
     int currentTime;
+    int lastUpdateTime;  // Aggiungi questa variabile
 
 public:
     explicit DeviceManager(double maxPowerLimit);
