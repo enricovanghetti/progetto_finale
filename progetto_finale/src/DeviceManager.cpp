@@ -1,4 +1,3 @@
-
 #include "../include/DeviceManager.h"
 #include <iostream>
 #include <sstream>
@@ -8,6 +7,7 @@ DeviceManager::DeviceManager(double maxPowerLimit) : maxPowerLimit(maxPowerLimit
 
 void DeviceManager::addDevice(const std::shared_ptr<Device>& device) {
     devices.push_back(device);
+    deviceRunningTime[device->getId()] = 0.0;  // Inizializza il tempo di esecuzione
 }
 
 void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
@@ -67,17 +67,46 @@ void DeviceManager::setTime(const std::string& time) {
         currentTime++;
         for (const auto& pair : activeDevices) {
             pair.second->update(currentTime);
+            // Aggiorna il tempo di esecuzione per i dispositivi attivi
+            deviceRunningTime[pair.first] += 1.0/60.0; // Converte in ore
         }
     }
     std::cout << "[Time] Impostato orario a " << formatTime() << "\n";
 }
 
+double DeviceManager::getDeviceRunningTime(int deviceId) const {
+    auto it = deviceRunningTime.find(deviceId);
+    return (it != deviceRunningTime.end()) ? it->second : 0.0;
+}
+
 void DeviceManager::printConsumption() const {
-    double totalPower = 0;
-    for (const auto& pair : activeDevices) {
-        totalPower += pair.second->getPowerConsumption();
+    double totalConsumption = 0.0;
+    
+    std::cout << "\n=== Report Consumo Energetico (00:00 - " << formatTime() << ") ===\n";
+    std::cout << std::fixed << std::setprecision(2);
+    
+    // Stampa info per ogni dispositivo
+    for (const auto& device : devices) {
+        double runningHours = getDeviceRunningTime(device->getId());
+        double consumption = device->calculateConsumption(runningHours);
+        totalConsumption += consumption;
+        
+        std::cout << device->getName() << ":\n";
+        std::cout << "  Stato: " << (device->getStatus() ? "Attivo" : "Inattivo") << "\n";
+        std::cout << "  Tempo di funzionamento: " << runningHours << " ore\n";
+        std::cout << "  Energia " << (consumption < 0 ? "prodotta: " : "consumata: ")
+                  << std::abs(consumption) << " kWh\n";
     }
-    std::cout << "[Info] Consumo totale attuale: " << totalPower << " kW\n";
+    
+    std::cout << "\nBilancio energetico totale: ";
+    if (totalConsumption < 0) {
+        std::cout << "Produzione netta di " << -totalConsumption << " kWh\n";
+    } else if (totalConsumption > 0) {
+        std::cout << "Consumo netto di " << totalConsumption << " kWh\n";
+    } else {
+        std::cout << "Bilancio neutro (0 kWh)\n";
+    }
+    std::cout << "==========================================\n\n";
 }
 
 std::string DeviceManager::formatTime() const {
