@@ -8,12 +8,18 @@
 #include "Device.h"
 
 class DeviceManager {
+private:
     std::vector<std::shared_ptr<Device>> devices;
     std::map<int, std::shared_ptr<Device>> activeDevices;
-    std::map<int, double> deviceEnergyConsumption; // Nuovo: per tracciare il consumo totale
+    std::map<int, double> deviceEnergyConsumption;
     double maxPowerLimit;
     int currentTime;
-    std::map<int, int> deviceTimers; // Nuovo: per gestire i timer
+
+    std::string getCurrentTimeStamp() const;
+    std::string formatSpecificTime(int minutes) const;
+    void initializeDeviceConsumption();
+    std::shared_ptr<Device> findDevice(const std::string& deviceName) const;
+    void updateDeviceConsumption();
 
 public:
     explicit DeviceManager(double maxPowerLimit);
@@ -23,16 +29,11 @@ public:
     void checkPowerConsumption();
     void setTime(const std::string& time);
     void printConsumption() const;
-    void printDeviceConsumption(const std::string& deviceName) const; // Nuovo
-    void resetTime(); // Nuovo
-    void resetTimers(); // Nuovo
-    void resetAll(); // Nuovo
+    void printDeviceConsumption(const std::string& deviceName) const;
+    void resetTime();
+    void resetTimers();
+    void resetAll();
     std::string formatTime() const;
-    void updateDeviceConsumption(); // Nuovo
-
-private:
-    std::shared_ptr<Device> findDevice(const std::string& deviceName) const; // Nuovo
-    void initializeDeviceConsumption(); // Nuovo
 };
 
 #endif
