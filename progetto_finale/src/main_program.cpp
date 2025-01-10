@@ -49,6 +49,7 @@ int main() {
 
         if (action == "set") {
             std::string secondWord;
+            std::string fullDeviceName;
             iss >> secondWord;
 
             if (secondWord.empty()) {
@@ -74,74 +75,62 @@ int main() {
                 continue;
             }
 
-            // Verifica che il dispositivo esista prima di procedere
-            auto device = manager.findDevice(secondWord);
-            if (!device) {
-                std::cout << "[Error] Dispositivo '" << secondWord << "' non trovato. Dispositivi disponibili:\n";
-                for (const auto& d : manager.getDevices()) {
-                    std::cout << "- " << d->getName() << "\n";
-                }
-                continue;
-            }
+            // Leggi il resto della riga per il nome del dispositivo e il comando
+            std::string restOfLine;
+            std::getline(iss, restOfLine);
+            fullDeviceName = secondWord;
 
-            // Raccolta delle parti rimanenti del comando
-            std::string rest;
-            std::getline(iss, rest);
-            std::istringstream restStream(rest);
-            
-            std::string name = secondWord;
-            std::string nextWord;
+            // Estrai il nome del dispositivo e il comando (on/off)
+            std::istringstream restStream(restOfLine);
+            std::string word;
             std::vector<std::string> timeValues;
             bool isTimerCommand = false;
+            std::string command;
 
-            while (restStream >> nextWord) {
-                if (nextWord == "on") {
-                    // Controllo se ci sono due orari dopo "on"
+            while (restStream >> word) {
+                if (word == "on" || word == "off") {
+                    command = word;
+                    
+                    // Leggi i possibili orari dopo on/off
                     std::string startTime, stopTime;
                     restStream >> startTime;
                     if (!startTime.empty()) {
                         restStream >> stopTime;
                         if (!stopTime.empty()) {
-                            // Caso "set Device on HH:MM HH:MM"
                             int startHours, startMinutes, stopHours, stopMinutes;
                             if (parseTime(startTime, startHours, startMinutes) && 
                                 parseTime(stopTime, stopHours, stopMinutes)) {
-                                int startTimeMinutes = startHours * 60 + startMinutes;
-                                int stopTimeMinutes = stopHours * 60 + stopMinutes;
-                                device->setTimer(startTimeMinutes, stopTimeMinutes);
-                                std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                                        << name << "' dalle " << startTime << " alle " << stopTime << "\n";
-                                isTimerCommand = true;
+                                auto device = manager.findDevice(fullDeviceName);
+                                if (device) {
+                                    int startTimeMinutes = startHours * 60 + startMinutes;
+                                    int stopTimeMinutes = stopHours * 60 + stopMinutes;
+                                    device->setTimer(startTimeMinutes, stopTimeMinutes);
+                                    std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
+                                            << fullDeviceName << "' dalle " << startTime << " alle " << stopTime << "\n";
+                                    isTimerCommand = true;
+                                }
                             }
                         }
                     }
-                    // Se non è un comando timer, trattalo come comando on immediato
+                    
                     if (!isTimerCommand) {
-                        manager.toggleDevice(name);
+                        manager.toggleDevice(fullDeviceName);
                         manager.checkPowerConsumption();
                     }
                     break;
-                } else if (nextWord == "off") {
-                    manager.toggleDevice(name);
-                    manager.checkPowerConsumption();
-                    break;
-                }
-                
-                // Se è un formato tempo HH:MM, salvalo
-                int h, m;
-                if (parseTime(nextWord, h, m)) {
-                    timeValues.push_back(nextWord);
+                } else if (parseTime(word, std::ignore, std::ignore)) {
+                    timeValues.push_back(word);
                 } else {
-                    if (!name.empty()) name += " ";
-                    name += nextWord;
+                    if (!fullDeviceName.empty()) fullDeviceName += " ";
+                    fullDeviceName += word;
                 }
             }
 
-            // Se abbiamo trovato dei valori tempo e non è già stato gestito come timer command
-            if (!timeValues.empty() && !isTimerCommand) {
-                auto device = manager.findDevice(name);
+            // Se non è stato trovato un comando on/off, controlla se ci sono orari per il timer
+            if (command.empty() && !timeValues.empty() && !isTimerCommand) {
+                auto device = manager.findDevice(fullDeviceName);
                 if (!device) {
-                    std::cout << "[Error] Dispositivo non trovato: " << name << "\n";
+                    std::cout << "[Error] Dispositivo non trovato: " << fullDeviceName << "\n";
                     continue;
                 }
 
@@ -150,18 +139,16 @@ int main() {
                 int startTime = startHours * 60 + startMinutes;
 
                 if (timeValues.size() > 1) {
-                    // Caso con orario di stop
                     int stopHours, stopMinutes;
                     parseTime(timeValues[1], stopHours, stopMinutes);
                     int stopTime = stopHours * 60 + stopMinutes;
                     device->setTimer(startTime, stopTime);
                     std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                             << name << "' dalle " << timeValues[0] << " alle " << timeValues[1] << "\n";
+                             << fullDeviceName << "' dalle " << timeValues[0] << " alle " << timeValues[1] << "\n";
                 } else {
-                    // Solo orario di start
                     device->setTimer(startTime);
                     std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                             << name << "' alle " << timeValues[0] << "\n";
+                             << fullDeviceName << "' alle " << timeValues[0] << "\n";
                 }
             }
         }
