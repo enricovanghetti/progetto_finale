@@ -133,7 +133,9 @@ void DeviceManager::setTime(const std::string& time) {
     }
 }
 
-void DeviceManager::printConsumption() const {
+void DeviceManager::printConsumption() {
+    updateDeviceConsumption();  // Aggiorna i consumi prima di mostrarli
+    
     std::cout << "[" << getCurrentTimeStamp() << "] Consumo energetico:" << std::endl;
     double totalConsumption = 0.0;
     
@@ -150,7 +152,9 @@ void DeviceManager::printConsumption() const {
               << totalConsumption << " kWh" << std::endl;
 }
 
-void DeviceManager::printDeviceConsumption(const std::string& deviceName) const {
+void DeviceManager::printDeviceConsumption(const std::string& deviceName) {
+    updateDeviceConsumption();  // Aggiorna i consumi prima di mostrarli
+    
     std::string searchName = toLowercase(deviceName);
     for (const auto& device : devices) {
         if (toLowercase(device->getName()) == searchName) {
