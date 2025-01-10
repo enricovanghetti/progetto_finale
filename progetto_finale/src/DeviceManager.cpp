@@ -23,8 +23,12 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
             device->toggle();
             if (device->getStatus()) {
                 activeDevices[device->getId()] = device;
+                std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
+                          << device->getName() << "' si è acceso" << std::endl;
             } else {
                 activeDevices.erase(device->getId());
+                std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
+                          << device->getName() << "' si è spento" << std::endl;
             }
             return;
         }
@@ -107,7 +111,11 @@ void DeviceManager::printDeviceConsumption(const std::string& deviceName) const 
             }
         }
     }
-    std::cout << "[Error] Dispositivo non trovato: " << deviceName << "\n";
+    std::cout << "[Error] Dispositivo non trovato: " << deviceName << std::endl;
+    std::cout << "Dispositivi disponibili:" << std::endl;
+    for (const auto& device : devices) {
+        std::cout << "- " << device->getName() << std::endl;
+    }
 }
 
 void DeviceManager::resetTime() {
