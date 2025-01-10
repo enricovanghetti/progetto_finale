@@ -21,8 +21,8 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
                 return;
             }
             
+            // Salva lo stato precedente per il calcolo del consumo
             bool wasOn = device->getStatus();
-            double prevConsumption = device->getPowerConsumption();
             
             device->toggle();
             
@@ -31,6 +31,7 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
                 std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
                           << device->getName() << "' si è acceso" << std::endl;
             } else {
+                // Se il dispositivo era acceso, aggiorna il consumo prima di spegnerlo
                 if (wasOn) {
                     updateDeviceConsumption();
                 }
@@ -58,26 +59,30 @@ void DeviceManager::checkPowerConsumption() {
         std::cout << "[" << getCurrentTimeStamp() << "] Warning: potenza massima superata (" 
                   << std::fixed << std::setprecision(1) << totalConsumption << "kW)" << std::endl;
         
+        // Ordina i dispositivi attivi per ordine di accensione (dal più recente)
         std::vector<std::shared_ptr<Device>> activeDevicesList;
         for (const auto& pair : activeDevices) {
-            if (pair.second->getName() != "photovoltaic system") {
-                activeDevicesList.push_back(pair.second);
-            }
+            activeDevicesList.push_back(pair.second);
         }
         
+        // Spegni i dispositivi uno alla volta finché non rientri nel limite
         for (auto it = activeDevicesList.rbegin(); it != activeDevicesList.rend(); ++it) {
-            (*it)->toggle();
-            std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
-                      << (*it)->getName() << "' è stato spento automaticamente" << std::endl;
-            activeDevices.erase((*it)->getId());
-            
-            totalConsumption = 0.0;
-            for (const auto& pair : activeDevices) {
-                totalConsumption += pair.second->getPowerConsumption();
-            }
-            
-            if (totalConsumption <= maxPowerLimit) {
-                break;
+            if ((*it)->getName() != "photovoltaic system") {  // Non spegnere il sistema fotovoltaico
+                (*it)->toggle();  // Spegni il dispositivo
+                std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
+                          << (*it)->getName() << "' è stato spento automaticamente" << std::endl;
+                activeDevices.erase((*it)->getId());
+                updateDeviceConsumption();  // Aggiorna il consumo dopo lo spegnimento
+                
+                // Ricalcola il consumo totale
+                totalConsumption = 0.0;
+                for (const auto& pair : activeDevices) {
+                    totalConsumption += pair.second->getPowerConsumption();
+                }
+                
+                if (totalConsumption <= maxPowerLimit) {
+                    break;  // Esci dal ciclo se siamo rientrati nel limite
+                }
             }
         }
     }
@@ -92,9 +97,9 @@ void DeviceManager::setTime(const std::string& time) {
         hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
         int newTime = hours * 60 + minutes;
         
+        // Aggiorna i dispositivi se il tempo avanza
         if (newTime > currentTime) {
-            updateDeviceConsumption();
-            
+            updateDeviceConsumption();  // Aggiorna il consumo prima del cambio tempo
             for (const auto& device : devices) {
                 device->update(newTime);
                 if (device->getStatus()) {
@@ -153,7 +158,7 @@ void DeviceManager::printDeviceConsumption(const std::string& deviceName) const 
 
 void DeviceManager::resetTime() {
     currentTime = 0;
-    initializeDeviceConsumption();
+    initializeDeviceConsumption();  // Reset dei consumi quando si resetta il tempo
     std::cout << "[00:00] Ora reimpostata a 00:00" << std::endl;
 }
 
@@ -202,12 +207,12 @@ std::string DeviceManager::formatSpecificTime(int minutes) const {
 }
 
 void DeviceManager::updateDeviceConsumption() {
-    static int lastUpdateTime = 0;
+    static int lastUpdateTime = currentTime;
     double hours = (currentTime - lastUpdateTime) / 60.0;
     
     if (hours > 0) {
         for (const auto& device : devices) {
-            if (device->getStatus()) {
+            if (device->getStatus()) {  // Aggiorna solo per i dispositivi attivi
                 auto it = deviceEnergyConsumption.find(device->getId());
                 if (it != deviceEnergyConsumption.end()) {
                     it->second += device->calculateConsumption(hours);
