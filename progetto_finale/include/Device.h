@@ -66,7 +66,6 @@ private:
     int startTime;
     bool hasTimerSet;
     int scheduledStartTime;
-    int scheduledEndTime;
 
 public:
     FCDevice(std::string name, int id, double powerConsumption, double cycleDuration)
@@ -74,8 +73,7 @@ public:
           cycleDuration(cycleDuration * 60),
           startTime(-1),
           hasTimerSet(false),
-          scheduledStartTime(-1),
-          scheduledEndTime(-1) {}
+          scheduledStartTime(-1) {}
 
     void toggle() override;
     double calculateConsumption(double hours) const override;
