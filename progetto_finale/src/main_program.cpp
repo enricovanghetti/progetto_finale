@@ -6,17 +6,40 @@
 #include <sstream>
 #include <algorithm>
 
+// Helper function per convertire una stringa in minuscolo
+std::string toLower(const std::string& str) {
+    std::string lower = str;
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    return lower;
+}
+
+// Helper function per parsare il tempo
+bool parseTime(const std::string& timeStr, int& hours, int& minutes) {
+    std::istringstream iss(timeStr);
+    char sep;
+    if (!(iss >> hours >> sep >> minutes) || sep != ':' || 
+        hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+        return false;
+    }
+    return true;
+}
+
 int main() {
     DeviceManager manager(3.5);
 
     // Inizializzazione dei dispositivi
     manager.addDevice(std::make_shared<ManualDevice>("Photovoltaic System", 1, -1.5));
-    manager.addDevice(std::make_shared<FCDevice>("Washing Machine", 2, -2.0, 1.8333));
-    manager.addDevice(std::make_shared<FCDevice>("Dishwasher", 3, -1.5, 3.25));
-    manager.addDevice(std::make_shared<ManualDevice>("Heat Pump", 4, -2.0));
-    manager.addDevice(std::make_shared<ManualDevice>("Water Heater", 5, -1.0));
-    manager.addDevice(std::make_shared<ManualDevice>("Fridge", 6, -0.4));
-    manager.addDevice(std::make_shared<FCDevice>("Microwave", 7, -0.8, 0.0333));
+    manager.addDevice(std::make_shared<FCDevice>("Washing Machine", 2, 2.0, 1.8333));
+    manager.addDevice(std::make_shared<FCDevice>("Dishwasher", 3, 1.5, 3.25));
+    manager.addDevice(std::make_shared<ManualDevice>("Heat Pump", 4, 2.0));
+    manager.addDevice(std::make_shared<ManualDevice>("Water Heater", 5, 1.0));
+    manager.addDevice(std::make_shared<ManualDevice>("Fridge", 6, 0.4));
+    manager.addDevice(std::make_shared<FCDevice>("Microwave", 7, 0.8, 0.0333));
+
+    const std::vector<std::string> deviceNames = {
+        "Photovoltaic System", "Washing Machine", "Dishwasher",
+        "Heat Pump", "Water Heater", "Fridge", "Microwave"
+    };
 
     std::string command;
     while (true) {
@@ -32,19 +55,20 @@ int main() {
             std::string secondWord;
             iss >> secondWord;
 
-            // Gestione del comando "set time"
             if (secondWord == "time") {
-                std::string time;
-                iss >> time;
-                if (!time.empty()) {
-                    manager.setTime(time);
-                } else {
-                    std::cout << "[Error] Formato tempo non valido. Usa HH:MM\n";
+                std::string timeStr;
+                iss >> timeStr;
+                if (!timeStr.empty()) {
+                    int hours, minutes;
+                    if (parseTime(timeStr, hours, minutes)) {
+                        manager.setTime(timeStr);
+                    } else {
+                        std::cout << "[Error] Formato tempo non valido. Usa HH:MM\n";
+                    }
                 }
                 continue;
             }
 
-            // Gestione dei comandi per i dispositivi
             std::string rest;
             std::getline(iss, rest);
             std::istringstream restStream(rest);
@@ -53,7 +77,6 @@ int main() {
             std::string state;
             std::string word;
 
-            // Accumula il nome del dispositivo
             while (restStream >> word) {
                 if (word == "on" || word == "off") {
                     state = word;
@@ -63,18 +86,12 @@ int main() {
                 name += word;
             }
 
-            // Trasforma il nome in minuscolo per confronto (case insensitive)
-            std::string nameLower = name;
-            std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
-
-            // Trova il dispositivo originale corrispondente
+            std::string nameLower = toLower(name);
             std::string originalName;
-            for (const auto& device : {"Photovoltaic System", "Washing Machine", "Dishwasher", 
-                                     "Heat Pump", "Water Heater", "Fridge", "Microwave"}) {
-                std::string lowerDevice = device;
-                std::transform(lowerDevice.begin(), lowerDevice.end(), lowerDevice.begin(), ::tolower);
-                if (lowerDevice == nameLower) {
-                    originalName = device;
+            
+            for (const auto& deviceName : deviceNames) {
+                if (toLower(deviceName) == nameLower) {
+                    originalName = deviceName;
                     break;
                 }
             }
@@ -85,16 +102,13 @@ int main() {
             }
 
             if (state == "on") {
-                // Gestione accensione dispositivo
                 std::string at;
                 restStream >> at;
                 if (at == "at") {
-                    std::string time;
-                    restStream >> time;
+                    std::string timeStr;
+                    restStream >> timeStr;
                     int hours, minutes;
-                    char sep;
-                    std::istringstream timeStream(time);
-                    if (timeStream >> hours >> sep >> minutes) {
+                    if (parseTime(timeStr, hours, minutes)) {
                         manager.toggleDevice(originalName, hours * 60 + minutes);
                     } else {
                         std::cout << "[Error] Formato tempo non valido per 'at'. Usa HH:MM\n";
@@ -109,15 +123,13 @@ int main() {
             } else {
                 std::cout << "[Error] Stato non valido: usa 'on' o 'off'\n";
             }
-        } 
+        }
         else if (action == "show") {
             std::string deviceName;
             std::getline(iss, deviceName);
             if (deviceName.empty()) {
-                // Mostra tutti i dispositivi
                 manager.printConsumption();
             } else {
-                // Rimuovi spazi iniziali e finali
                 deviceName = deviceName.substr(deviceName.find_first_not_of(" \t"));
                 if (!deviceName.empty()) {
                     manager.printDeviceConsumption(deviceName);
