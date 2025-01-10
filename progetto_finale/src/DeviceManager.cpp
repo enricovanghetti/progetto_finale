@@ -9,6 +9,7 @@ DeviceManager::DeviceManager(double maxPowerLimit)
 }
 
 void DeviceManager::initializeDeviceConsumption() {
+    deviceEnergyConsumption.clear();
     for (const auto& device : devices) {
         deviceEnergyConsumption[device->getId()] = 0.0;
     }
@@ -51,12 +52,10 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
     if (startAt != -1) {
         auto fcDevice = dynamic_cast<FCDevice*>(device.get());
         if (fcDevice) {
-            fcDevice->setStartTime(startAt);
-            fcDevice->toggle();
+            fcDevice->setTimer(startAt);
             activeDevices[device->getId()] = device;
-            std::cout << getCurrentTimeStamp() << "Impostato un timer per il dispositivo '"
-                     << deviceName << "' dalle " << formatTime() << " alle "
-                     << formatSpecificTime(startAt + static_cast<int>(fcDevice->getCycleDuration())) << "\n";
+            std::cout << getCurrentTimeStamp() << "Impostato timer per il dispositivo '"
+                     << deviceName << "': accensione alle " << formatSpecificTime(startAt) << "\n";
             return;
         }
     }
@@ -65,10 +64,6 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
     if (device->getStatus()) {
         activeDevices[device->getId()] = device;
         std::cout << getCurrentTimeStamp() << "Il dispositivo '" << deviceName << "' si è acceso\n";
-        auto fcDevice = dynamic_cast<FCDevice*>(device.get());
-        if (fcDevice) {
-            fcDevice->setStartTime(currentTime);
-        }
     } else {
         activeDevices.erase(device->getId());
         std::cout << getCurrentTimeStamp() << "Il dispositivo '" << deviceName << "' si è spento\n";
@@ -94,11 +89,19 @@ void DeviceManager::checkPowerConsumption() {
     if (totalPower > maxPowerLimit) {
         std::cout << getCurrentTimeStamp() << "Warning: Consumo totale supera il limite di " 
                  << maxPowerLimit << " kW!\n";
-        for (auto it = activeDevices.rbegin(); it != activeDevices.rend(); ++it) {
+        std::vector<std::shared_ptr<Device>> toTurnOff;
+        for (const auto& pair : activeDevices) {
             if (totalPower <= maxPowerLimit) break;
-            totalPower -= it->second->getPowerConsumption();
-            it->second->toggle();
-            std::cout << getCurrentTimeStamp() << "Il dispositivo '" << it->second->getName() 
+            auto device = pair.second;
+            if (device->getPowerConsumption() > 0) {
+                totalPower -= device->getPowerConsumption();
+                toTurnOff.push_back(device);
+            }
+        }
+        for (auto& device : toTurnOff) {
+            device->toggle();
+            activeDevices.erase(device->getId());
+            std::cout << getCurrentTimeStamp() << "Il dispositivo '" << device->getName() 
                      << "' è stato spento per rientrare nel limite\n";
         }
     }
@@ -135,9 +138,8 @@ void DeviceManager::resetTime() {
 
 void DeviceManager::resetTimers() {
     for (const auto& device : devices) {
-        auto fcDevice = dynamic_cast<FCDevice*>(device.get());
-        if (fcDevice && fcDevice->hasTimer()) {
-            fcDevice->clearTimer();
+        if (device->hasTimer()) {
+            device->clearTimer();
             std::cout << getCurrentTimeStamp() << "Rimosso il timer dal dispositivo '" 
                      << device->getName() << "'\n";
         }
@@ -145,19 +147,8 @@ void DeviceManager::resetTimers() {
 }
 
 void DeviceManager::resetAll() {
-    currentTime = 0;
-    activeDevices.clear();
-    initializeDeviceConsumption();
-    for (const auto& device : devices) {
-        if (device->getStatus()) {
-            device->toggle();
-        }
-        auto fcDevice = dynamic_cast<FCDevice*>(device.get());
-        if (fcDevice) {
-            fcDevice->clearTimer();
-        }
-    }
-    std::cout << "[00:00] L'orario attuale è 00:00\n";
+    resetTime();
+    resetTimers();
 }
 
 void DeviceManager::printDeviceConsumption(const std::string& deviceName) const {
