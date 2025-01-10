@@ -26,6 +26,9 @@ public:
     virtual double calculateConsumption(double hours) const = 0;
     virtual void update(int currentTime) = 0;
     virtual void printStatus() const = 0;
+    virtual void setTimer(int start, int stop = -1) = 0;
+    virtual void clearTimer() = 0;
+    virtual bool hasTimer() const = 0;
 
     bool getStatus() const { return isOn; }
     const std::string& getName() const { return name; }
@@ -34,14 +37,27 @@ public:
 };
 
 class ManualDevice : public Device {
+private:
+    bool hasTimerSet;
+    int scheduledStartTime;
+    int scheduledStopTime;
+
 public:
     ManualDevice(std::string name, int id, double powerConsumption)
-        : Device(std::move(name), id, powerConsumption) {}
+        : Device(std::move(name), id, powerConsumption),
+          hasTimerSet(false),
+          scheduledStartTime(-1),
+          scheduledStopTime(-1) {}
 
     void toggle() override;
     double calculateConsumption(double hours) const override;
     void update(int currentTime) override;
     void printStatus() const override;
+    void setTimer(int start, int stop = -1) override;
+    void clearTimer() override;
+    bool hasTimer() const override { return hasTimerSet; }
+    int getScheduledStartTime() const { return scheduledStartTime; }
+    int getScheduledStopTime() const { return scheduledStopTime; }
 };
 
 class FCDevice : public Device {
@@ -66,13 +82,10 @@ public:
     void update(int currentTime) override;
     void setStartTime(int time);
     void printStatus() const override;
-    
-    bool hasTimer() const { return hasTimerSet; }
-    void clearTimer();
-    void setTimer(int start, int end);
+    void setTimer(int start, int stop = -1) override;
+    void clearTimer() override;
+    bool hasTimer() const override { return hasTimerSet; }
     double getCycleDuration() const { return cycleDuration; }
-    int getScheduledStartTime() const { return scheduledStartTime; }
-    int getScheduledEndTime() const { return scheduledEndTime; }
 };
 
 #endif
