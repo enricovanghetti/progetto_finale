@@ -98,7 +98,9 @@ void DeviceManager::setTime(const std::string& time) {
         int newTime = hours * 60 + minutes;
         
         if (newTime > currentTime) {
-            updateDeviceConsumption();
+            updateDeviceConsumption();  // Aggiorna il consumo fino ad ora
+            currentTime = newTime;      // Imposta il nuovo tempo
+            
             for (const auto& device : devices) {
                 device->update(newTime);
                 if (device->getStatus()) {
@@ -118,10 +120,13 @@ void DeviceManager::setTime(const std::string& time) {
                     }
                 }
             }
+            
+            lastUpdateTime = newTime;  // Aggiorna lastUpdateTime alla fine
+        } else {
+            currentTime = newTime;
+            lastUpdateTime = newTime;
         }
         
-        currentTime = newTime;
-        lastUpdateTime = newTime;  // Aggiungi questa riga per aggiornare lastUpdateTime
         std::cout << "[" << getCurrentTimeStamp() << "] Ora impostata: " << time << std::endl;
     } else {
         std::cout << "[Error] Formato tempo non valido. Usa HH:MM" << std::endl;
@@ -160,7 +165,7 @@ void DeviceManager::printDeviceConsumption(const std::string& deviceName) const 
     std::cout << "[Error] Dispositivo non trovato: " << deviceName << std::endl;
     std::cout << "Dispositivi disponibili:" << std::endl;
     for (const auto& device : devices) {
-        std::cout << "- " << device->getName() << std::endl;
+        std::cout << "- " << device->getName() << "\n";
     }
 }
 
