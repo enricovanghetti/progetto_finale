@@ -92,10 +92,12 @@ int main() {
             std::vector<std::string> timeValues;
             bool isTimerCommand = false;
             std::string command;
+            bool hasValidCommand = false;
 
             while (restStream >> word) {
                 if (word == "on" || word == "off") {
                     command = word;
+                    hasValidCommand = true;
                     
                     // Leggi i possibili orari dopo on/off
                     std::string startTime, stopTime;
@@ -133,28 +135,37 @@ int main() {
             }
 
             // Se non è stato trovato un comando on/off, controlla se ci sono orari per il timer
-            if (command.empty() && !timeValues.empty() && !isTimerCommand) {
+            if (!hasValidCommand) {
                 auto device = manager.findDevice(fullDeviceName);
                 if (!device) {
                     std::cout << "[Error] Dispositivo non trovato: " << fullDeviceName << "\n";
+                    std::cout << "Dispositivi disponibili:\n";
+                    for (const auto& d : manager.getDevices()) {
+                        std::cout << "- " << d->getName() << "\n";
+                    }
                     continue;
                 }
 
-                int startHours, startMinutes;
-                parseTime(timeValues[0], startHours, startMinutes);
-                int startTime = startHours * 60 + startMinutes;
+                if (!timeValues.empty()) {
+                    int startHours, startMinutes;
+                    parseTime(timeValues[0], startHours, startMinutes);
+                    int startTime = startHours * 60 + startMinutes;
 
-                if (timeValues.size() > 1) {
-                    int stopHours, stopMinutes;
-                    parseTime(timeValues[1], stopHours, stopMinutes);
-                    int stopTime = stopHours * 60 + stopMinutes;
-                    device->setTimer(startTime, stopTime);
-                    std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                             << fullDeviceName << "' dalle " << timeValues[0] << " alle " << timeValues[1] << "\n";
+                    if (timeValues.size() > 1) {
+                        int stopHours, stopMinutes;
+                        parseTime(timeValues[1], stopHours, stopMinutes);
+                        int stopTime = stopHours * 60 + stopMinutes;
+                        device->setTimer(startTime, stopTime);
+                        std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
+                                << fullDeviceName << "' dalle " << timeValues[0] << " alle " << timeValues[1] << "\n";
+                    } else {
+                        device->setTimer(startTime);
+                        std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
+                                << fullDeviceName << "' alle " << timeValues[0] << "\n";
+                    }
                 } else {
-                    device->setTimer(startTime);
-                    std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                             << fullDeviceName << "' alle " << timeValues[0] << "\n";
+                    std::cout << "[Error] Comando non valido per il dispositivo: " << fullDeviceName << "\n";
+                    std::cout << "Usa 'on', 'off' o specifica un timer (HH:MM [HH:MM])\n";
                 }
             }
         }
