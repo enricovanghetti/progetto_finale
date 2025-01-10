@@ -9,6 +9,7 @@
 int main() {
     DeviceManager manager(3.5);
 
+    // Inizializzazione dei dispositivi
     manager.addDevice(std::make_shared<ManualDevice>("Photovoltaic System", 1, -1.5));
     manager.addDevice(std::make_shared<FCDevice>("Washing Machine", 2, -2.0, 1.8333));
     manager.addDevice(std::make_shared<FCDevice>("Dishwasher", 3, -1.5, 3.25));
@@ -28,17 +29,13 @@ int main() {
         iss >> action;
 
         if (action == "set") {
-            std::string rest;
-            std::getline(iss, rest);
-            std::istringstream restStream(rest);
-            
-            std::string firstWord;
-            restStream >> firstWord;
+            std::string secondWord;
+            iss >> secondWord;
 
-            // Prima controlla se è un comando "set time"
-            if (firstWord == "time") {
+            // Gestione del comando "set time"
+            if (secondWord == "time") {
                 std::string time;
-                restStream >> time;
+                iss >> time;
                 if (!time.empty()) {
                     manager.setTime(time);
                 } else {
@@ -47,18 +44,23 @@ int main() {
                 continue;
             }
 
-            // Se non è "time", procedi con la logica dei dispositivi
-            std::string name = firstWord;
+            // Gestione dei comandi per i dispositivi
+            std::string rest;
+            std::getline(iss, rest);
+            std::istringstream restStream(rest);
+            
+            std::string name = secondWord;
             std::string state;
             std::string word;
 
-            // Accumula il resto del nome del dispositivo
+            // Accumula il nome del dispositivo
             while (restStream >> word) {
                 if (word == "on" || word == "off") {
                     state = word;
                     break;
                 }
-                name += " " + word;
+                if (!name.empty()) name += " ";
+                name += word;
             }
 
             // Trasforma il nome in minuscolo per confronto (case insensitive)
@@ -107,9 +109,35 @@ int main() {
             } else {
                 std::cout << "[Error] Stato non valido: usa 'on' o 'off'\n";
             }
-        } else if (action == "show") {
-            manager.printConsumption();
-        } else {
+        } 
+        else if (action == "show") {
+            std::string deviceName;
+            std::getline(iss, deviceName);
+            if (deviceName.empty()) {
+                // Mostra tutti i dispositivi
+                manager.printConsumption();
+            } else {
+                // Rimuovi spazi iniziali e finali
+                deviceName = deviceName.substr(deviceName.find_first_not_of(" \t"));
+                if (!deviceName.empty()) {
+                    manager.printDeviceConsumption(deviceName);
+                }
+            }
+        }
+        else if (action == "reset") {
+            std::string resetType;
+            iss >> resetType;
+            if (resetType == "time") {
+                manager.resetTime();
+            } else if (resetType == "timers") {
+                manager.resetTimers();
+            } else if (resetType == "all") {
+                manager.resetAll();
+            } else {
+                std::cout << "[Error] Comando reset non valido. Usa 'time', 'timers' o 'all'\n";
+            }
+        }
+        else {
             std::cout << "[Error] Comando non riconosciuto: " << action << "\n";
         }
     }
