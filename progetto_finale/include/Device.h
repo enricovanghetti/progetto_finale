@@ -1,89 +1,48 @@
-#ifndef DEVICE_H
-#define DEVICE_H
+#ifndef DEVICEMANAGER_H
+#define DEVICEMANAGER_H
 
+#include <vector>
+#include <map>
+#include <memory>
 #include <string>
-#include <iostream>
 #include <algorithm>
-#include <sstream>
-#include <iomanip>
+#include "Device.h"
 
-std::string formatTime(int minutes);
-
-class Device {
-protected:
-    std::string name;
-    int id;
-    double powerConsumption;
-    bool isOn;
+class DeviceManager {
+    std::vector<std::shared_ptr<Device>> devices;
+    std::map<int, std::shared_ptr<Device>> activeDevices;
+    std::map<int, double> deviceEnergyConsumption;
+    std::vector<std::shared_ptr<Device>> deviceActivationOrder;  // Per tenere traccia dell'ordine di attivazione
+    double maxPowerLimit;
+    int currentTime;
 
 public:
-    Device(std::string name, int id, double powerConsumption)
-        : name(std::move(name)), id(id), powerConsumption(powerConsumption), isOn(false) {}
+    explicit DeviceManager(double maxPowerLimit);
 
-    virtual ~Device() {}
+    void addDevice(const std::shared_ptr<Device>& device);
+    void toggleDevice(const std::string& deviceName, int startAt = -1);
+    void checkPowerConsumption();
+    void setTime(const std::string& time);
+    void printConsumption() const;
+    void printDeviceConsumption(const std::string& deviceName) const;
+    void resetTime();
+    void resetTimers();
+    void resetAll();
+    std::string formatTime() const;
+    std::shared_ptr<Device> findDevice(const std::string& deviceName) const;
+    const std::vector<std::shared_ptr<Device>>& getDevices() const { return devices; }
 
-    virtual void toggle() = 0;
-    virtual double calculateConsumption(double hours) const = 0;
-    virtual void update(int currentTime) = 0;
-    virtual void printStatus() const = 0;
-    virtual void setTimer(int start, int stop = -1) = 0;
-    virtual void clearTimer() = 0;
-    virtual bool hasTimer() const = 0;
-
-    bool getStatus() const { return isOn; }
-    const std::string& getName() const { return name; }
-    int getId() const { return id; }
-    double getPowerConsumption() const { return isOn ? powerConsumption : 0.0; }
-};
-
-class ManualDevice : public Device {
 private:
-    bool hasTimerSet;
-    int scheduledStartTime;
-    int scheduledStopTime;
-
-public:
-    ManualDevice(std::string name, int id, double powerConsumption)
-        : Device(std::move(name), id, powerConsumption),
-          hasTimerSet(false),
-          scheduledStartTime(-1),
-          scheduledStopTime(-1) {}
-
-    void toggle() override;
-    double calculateConsumption(double hours) const override;
-    void update(int currentTime) override;
-    void printStatus() const override;
-    void setTimer(int start, int stop = -1) override;
-    void clearTimer() override;
-    bool hasTimer() const override { return hasTimerSet; }
-    int getScheduledStartTime() const { return scheduledStartTime; }
-    int getScheduledStopTime() const { return scheduledStopTime; }
-};
-
-class FCDevice : public Device {
-private:
-    double cycleDuration;  // in minuti
-    int startTime;
-    bool hasTimerSet;
-    int scheduledStartTime;
-
-public:
-    FCDevice(std::string name, int id, double powerConsumption, double cycleDuration)
-        : Device(std::move(name), id, powerConsumption), 
-          cycleDuration(cycleDuration * 60),
-          startTime(-1),
-          hasTimerSet(false),
-          scheduledStartTime(-1) {}
-
-    void toggle() override;
-    double calculateConsumption(double hours) const override;
-    void update(int currentTime) override;
-    void setStartTime(int time);
-    void printStatus() const override;
-    void setTimer(int start, int stop = -1) override;
-    void clearTimer() override;
-    bool hasTimer() const override { return hasTimerSet; }
-    double getCycleDuration() const { return cycleDuration; }
+    std::string getCurrentTimeStamp() const;
+    std::string formatSpecificTime(int minutes) const;
+    void updateDeviceConsumption();
+    void initializeDeviceConsumption();
+    
+    static std::string toLowercase(const std::string& str) {
+        std::string lower = str;
+        std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+        return lower;
+    }
 };
 
 #endif
