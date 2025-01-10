@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <vector>
 
 // Helper function per convertire una stringa in minuscolo
 std::string toLower(const std::string& str) {
@@ -73,27 +74,43 @@ int main() {
             std::string name = secondWord;
             std::string nextWord;
             std::vector<std::string> timeValues;
+            bool isTimerCommand = false;
 
             while (restStream >> nextWord) {
-                if (nextWord == "on" || nextWord == "off") {
-                    // Gestione vecchio formato comando
-                    if (nextWord == "on") {
-                        std::string at;
-                        std::string timeStr;
-                        restStream >> at >> timeStr;
-                        if (at == "at" && !timeStr.empty()) {
-                            int hours, minutes;
-                            if (parseTime(timeStr, hours, minutes)) {
-                                manager.toggleDevice(name, hours * 60 + minutes);
-                            } else {
-                                std::cout << "[Error] Formato tempo non valido per 'at'. Usa HH:MM\n";
+                if (nextWord == "on") {
+                    // Controllo se ci sono due orari dopo "on"
+                    std::string startTime, stopTime;
+                    restStream >> startTime;
+                    if (!startTime.empty()) {
+                        restStream >> stopTime;
+                        if (!stopTime.empty()) {
+                            // Caso "set Device on HH:MM HH:MM"
+                            int startHours, startMinutes, stopHours, stopMinutes;
+                            if (parseTime(startTime, startHours, startMinutes) && 
+                                parseTime(stopTime, stopHours, stopMinutes)) {
+                                auto device = manager.findDevice(name);
+                                if (device) {
+                                    int startTimeMinutes = startHours * 60 + startMinutes;
+                                    int stopTimeMinutes = stopHours * 60 + stopMinutes;
+                                    device->setTimer(startTimeMinutes, stopTimeMinutes);
+                                    std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
+                                            << name << "' dalle " << startTime << " alle " << stopTime << "\n";
+                                    isTimerCommand = true;
+                                } else {
+                                    std::cout << "[Error] Dispositivo non trovato: " << name << "\n";
+                                }
+                                break;
                             }
-                        } else {
-                            manager.toggleDevice(name);
                         }
-                    } else {
-                        manager.toggleDevice(name);
                     }
+                    // Se non è un comando timer, trattalo come comando on immediato
+                    if (!isTimerCommand) {
+                        manager.toggleDevice(name);
+                        manager.checkPowerConsumption();
+                    }
+                    break;
+                } else if (nextWord == "off") {
+                    manager.toggleDevice(name);
                     manager.checkPowerConsumption();
                     break;
                 }
@@ -108,8 +125,8 @@ int main() {
                 }
             }
 
-            // Se abbiamo trovato dei valori tempo, trattiamoli come nuovo formato comando
-            if (!timeValues.empty()) {
+            // Se abbiamo trovato dei valori tempo e non è già stato gestito come timer command
+            if (!timeValues.empty() && !isTimerCommand) {
                 auto device = manager.findDevice(name);
                 if (!device) {
                     std::cout << "[Error] Dispositivo non trovato: " << name << "\n";
@@ -126,17 +143,14 @@ int main() {
                     parseTime(timeValues[1], stopHours, stopMinutes);
                     int stopTime = stopHours * 60 + stopMinutes;
                     device->setTimer(startTime, stopTime);
+                    std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
+                             << name << "' dalle " << timeValues[0] << " alle " << timeValues[1] << "\n";
                 } else {
                     // Solo orario di start
                     device->setTimer(startTime);
+                    std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
+                             << name << "' alle " << timeValues[0] << "\n";
                 }
-
-                std::cout << "[" << manager.formatTime() << "] Impostato timer per '" << name 
-                         << "': accensione alle " << timeValues[0];
-                if (timeValues.size() > 1) {
-                    std::cout << ", spegnimento alle " << timeValues[1];
-                }
-                std::cout << "\n";
             }
         }
         else if (action == "show") {
