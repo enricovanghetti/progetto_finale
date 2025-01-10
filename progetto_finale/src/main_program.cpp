@@ -29,13 +29,13 @@ int main() {
     DeviceManager manager(3.5);
 
     // Inizializzazione dei dispositivi
-    manager.addDevice(std::make_shared<ManualDevice>("Photovoltaic System", 1, -1.5));
-    manager.addDevice(std::make_shared<FCDevice>("Washing Machine", 2, 2.0, 1.8333));
-    manager.addDevice(std::make_shared<FCDevice>("Dishwasher", 3, 1.5, 3.25));
-    manager.addDevice(std::make_shared<ManualDevice>("Heat Pump", 4, 2.0));
-    manager.addDevice(std::make_shared<ManualDevice>("Water Heater", 5, 1.0));
-    manager.addDevice(std::make_shared<ManualDevice>("Fridge", 6, 0.4));
-    manager.addDevice(std::make_shared<FCDevice>("Microwave", 7, 0.8, 0.0333));
+    manager.addDevice(std::make_shared<ManualDevice>("photovoltaic system", 1, -1.5));
+    manager.addDevice(std::make_shared<FCDevice>("washing machine", 2, 2.0, 1.8333));
+    manager.addDevice(std::make_shared<FCDevice>("dishwasher", 3, 1.5, 3.25));
+    manager.addDevice(std::make_shared<ManualDevice>("heat pump", 4, 2.0));
+    manager.addDevice(std::make_shared<ManualDevice>("water heater", 5, 1.0));
+    manager.addDevice(std::make_shared<ManualDevice>("fridge", 6, 0.4));
+    manager.addDevice(std::make_shared<FCDevice>("microwave", 7, 0.8, 0.0333));
 
     std::string command;
     while (true) {
@@ -51,6 +51,14 @@ int main() {
             std::string secondWord;
             iss >> secondWord;
 
+            if (secondWord.empty()) {
+                std::cout << "[Error] Comando 'set' richiede un dispositivo o 'time'. Dispositivi disponibili:\n";
+                for (const auto& device : manager.getDevices()) {
+                    std::cout << "- " << device->getName() << "\n";
+                }
+                continue;
+            }
+
             // Gestione del comando "set time"
             if (secondWord == "time") {
                 std::string timeStr;
@@ -62,6 +70,16 @@ int main() {
                     } else {
                         std::cout << "[Error] Formato tempo non valido. Usa HH:MM\n";
                     }
+                }
+                continue;
+            }
+
+            // Verifica che il dispositivo esista prima di procedere
+            auto device = manager.findDevice(secondWord);
+            if (!device) {
+                std::cout << "[Error] Dispositivo '" << secondWord << "' non trovato. Dispositivi disponibili:\n";
+                for (const auto& d : manager.getDevices()) {
+                    std::cout << "- " << d->getName() << "\n";
                 }
                 continue;
             }
@@ -88,18 +106,12 @@ int main() {
                             int startHours, startMinutes, stopHours, stopMinutes;
                             if (parseTime(startTime, startHours, startMinutes) && 
                                 parseTime(stopTime, stopHours, stopMinutes)) {
-                                auto device = manager.findDevice(name);
-                                if (device) {
-                                    int startTimeMinutes = startHours * 60 + startMinutes;
-                                    int stopTimeMinutes = stopHours * 60 + stopMinutes;
-                                    device->setTimer(startTimeMinutes, stopTimeMinutes);
-                                    std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                                            << name << "' dalle " << startTime << " alle " << stopTime << "\n";
-                                    isTimerCommand = true;
-                                } else {
-                                    std::cout << "[Error] Dispositivo non trovato: " << name << "\n";
-                                }
-                                break;
+                                int startTimeMinutes = startHours * 60 + startMinutes;
+                                int stopTimeMinutes = stopHours * 60 + stopMinutes;
+                                device->setTimer(startTimeMinutes, stopTimeMinutes);
+                                std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
+                                        << name << "' dalle " << startTime << " alle " << stopTime << "\n";
+                                isTimerCommand = true;
                             }
                         }
                     }
