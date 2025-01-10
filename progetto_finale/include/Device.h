@@ -1,10 +1,13 @@
-
 #ifndef DEVICE_H
 #define DEVICE_H
 
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <sstream>
+#include <iomanip>
+
+std::string formatTime(int minutes);
 
 class Device {
 protected:
@@ -42,18 +45,34 @@ public:
 };
 
 class FCDevice : public Device {
+private:
     double cycleDuration;
     int startTime;
+    bool hasTimerSet;
+    int scheduledStartTime;
+    int scheduledEndTime;
 
 public:
     FCDevice(std::string name, int id, double powerConsumption, double cycleDuration)
-        : Device(std::move(name), id, powerConsumption), cycleDuration(cycleDuration * 60), startTime(-1) {}
+        : Device(std::move(name), id, powerConsumption), 
+          cycleDuration(cycleDuration * 60),
+          startTime(-1),
+          hasTimerSet(false),
+          scheduledStartTime(-1),
+          scheduledEndTime(-1) {}
 
     void toggle() override;
     double calculateConsumption(double hours) const override;
     void update(int currentTime) override;
     void setStartTime(int time);
     void printStatus() const override;
+    
+    bool hasTimer() const { return hasTimerSet; }
+    void clearTimer();
+    void setTimer(int start, int end);
+    double getCycleDuration() const { return cycleDuration; }
+    int getScheduledStartTime() const { return scheduledStartTime; }
+    int getScheduledEndTime() const { return scheduledEndTime; }
 };
 
 #endif
