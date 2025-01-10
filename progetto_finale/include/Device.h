@@ -46,7 +46,7 @@ public:
 
 class FCDevice : public Device {
 private:
-    double cycleDuration;
+    double cycleDuration;  // in minuti
     int startTime;
     bool hasTimerSet;
     int scheduledStartTime;
