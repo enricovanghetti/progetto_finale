@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <algorithm>
 #include "Device.h"
 
 class DeviceManager {
@@ -28,12 +29,19 @@ public:
     void resetAll();
     std::string formatTime() const;
     std::shared_ptr<Device> findDevice(const std::string& deviceName) const;
+    const std::vector<std::shared_ptr<Device>>& getDevices() const { return devices; }
 
 private:
     std::string getCurrentTimeStamp() const;
     std::string formatSpecificTime(int minutes) const;
     void updateDeviceConsumption();
     void initializeDeviceConsumption();
+    
+    static std::string toLowercase(const std::string& str) {
+        std::string lower = str;
+        std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+        return lower;
+    }
 };
 
 #endif
