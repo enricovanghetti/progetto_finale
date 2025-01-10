@@ -27,13 +27,13 @@ public:
     void resetTimers();
     void resetAll();
     std::string formatTime() const;
+    std::shared_ptr<Device> findDevice(const std::string& deviceName) const;
 
 private:
     std::string getCurrentTimeStamp() const;
     std::string formatSpecificTime(int minutes) const;
     void updateDeviceConsumption();
     void initializeDeviceConsumption();
-    std::shared_ptr<Device> findDevice(const std::string& deviceName) const;
 };
 
 #endif
