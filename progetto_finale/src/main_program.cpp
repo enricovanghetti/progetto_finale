@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 #include <sstream>
-#include <algorithm> // Per trasformare i nomi in minuscolo
+#include <algorithm>
 
 int main() {
     DeviceManager manager(3.5);
@@ -29,31 +29,49 @@ int main() {
 
         if (action == "set") {
             std::string rest;
-            std::getline(iss, rest); // Legge tutto dopo "set"
+            std::getline(iss, rest);
             std::istringstream restStream(rest);
+            
+            std::string firstWord;
+            restStream >> firstWord;
 
-            std::string name, state;
+            // Prima controlla se è un comando "set time"
+            if (firstWord == "time") {
+                std::string time;
+                restStream >> time;
+                if (!time.empty()) {
+                    manager.setTime(time);
+                } else {
+                    std::cout << "[Error] Formato tempo non valido. Usa HH:MM\n";
+                }
+                continue;
+            }
+
+            // Se non è "time", procedi con la logica dei dispositivi
+            std::string name = firstWord;
+            std::string state;
             std::string word;
 
-            // Accumula il nome del dispositivo
+            // Accumula il resto del nome del dispositivo
             while (restStream >> word) {
                 if (word == "on" || word == "off") {
-                    state = word; // Identifica "on" o "off"
+                    state = word;
                     break;
                 }
-                if (!name.empty()) name += " ";
-                name += word;
+                name += " " + word;
             }
 
             // Trasforma il nome in minuscolo per confronto (case insensitive)
-            std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+            std::string nameLower = name;
+            std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
 
             // Trova il dispositivo originale corrispondente
             std::string originalName;
-            for (const auto& device : {"Photovoltaic System", "Washing Machine", "Dishwasher", "Heat Pump", "Water Heater", "Fridge", "Microwave"}) {
+            for (const auto& device : {"Photovoltaic System", "Washing Machine", "Dishwasher", 
+                                     "Heat Pump", "Water Heater", "Fridge", "Microwave"}) {
                 std::string lowerDevice = device;
                 std::transform(lowerDevice.begin(), lowerDevice.end(), lowerDevice.begin(), ::tolower);
-                if (lowerDevice == name) {
+                if (lowerDevice == nameLower) {
                     originalName = device;
                     break;
                 }
@@ -64,13 +82,8 @@ int main() {
                 continue;
             }
 
-            if (originalName == "time") {
-                // Gestione del comando "set time"
-                std::string time;
-                restStream >> time;
-                manager.setTime(time);
-            } else if (state == "on") {
-                // Accensione dispositivo
+            if (state == "on") {
+                // Gestione accensione dispositivo
                 std::string at;
                 restStream >> at;
                 if (at == "at") {
@@ -79,18 +92,20 @@ int main() {
                     int hours, minutes;
                     char sep;
                     std::istringstream timeStream(time);
-                    timeStream >> hours >> sep >> minutes;
-                    manager.toggleDevice(originalName, hours * 60 + minutes);
+                    if (timeStream >> hours >> sep >> minutes) {
+                        manager.toggleDevice(originalName, hours * 60 + minutes);
+                    } else {
+                        std::cout << "[Error] Formato tempo non valido per 'at'. Usa HH:MM\n";
+                    }
                 } else {
                     manager.toggleDevice(originalName);
                 }
                 manager.checkPowerConsumption();
             } else if (state == "off") {
-                // Spegnimento dispositivo
                 manager.toggleDevice(originalName);
                 manager.checkPowerConsumption();
             } else {
-                std::cout << "[Error] Stato non valido: " << state << "\n";
+                std::cout << "[Error] Stato non valido: usa 'on' o 'off'\n";
             }
         } else if (action == "show") {
             manager.printConsumption();
