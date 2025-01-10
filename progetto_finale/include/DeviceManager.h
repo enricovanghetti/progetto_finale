@@ -10,9 +10,10 @@
 class DeviceManager {
     std::vector<std::shared_ptr<Device>> devices;
     std::map<int, std::shared_ptr<Device>> activeDevices;
+    std::map<int, double> deviceEnergyConsumption; // Nuovo: per tracciare il consumo totale
     double maxPowerLimit;
     int currentTime;
-    std::map<int, double> deviceRunningTime;  // Nuovo: per tracciare il tempo di esecuzione
+    std::map<int, int> deviceTimers; // Nuovo: per gestire i timer
 
 public:
     explicit DeviceManager(double maxPowerLimit);
@@ -22,8 +23,16 @@ public:
     void checkPowerConsumption();
     void setTime(const std::string& time);
     void printConsumption() const;
+    void printDeviceConsumption(const std::string& deviceName) const; // Nuovo
+    void resetTime(); // Nuovo
+    void resetTimers(); // Nuovo
+    void resetAll(); // Nuovo
     std::string formatTime() const;
-    double getDeviceRunningTime(int deviceId) const;  // Nuovo: per ottenere il tempo di esecuzione
+    void updateDeviceConsumption(); // Nuovo
+
+private:
+    std::shared_ptr<Device> findDevice(const std::string& deviceName) const; // Nuovo
+    void initializeDeviceConsumption(); // Nuovo
 };
 
 #endif
