@@ -12,6 +12,7 @@ class DeviceManager {
     std::vector<std::shared_ptr<Device>> devices;
     std::map<int, std::shared_ptr<Device>> activeDevices;
     std::map<int, double> deviceEnergyConsumption;
+    std::vector<std::shared_ptr<Device>> deviceActivationOrder;  // Per tenere traccia dell'ordine di attivazione
     double maxPowerLimit;
     int currentTime;
 
