@@ -101,7 +101,7 @@ int main() {
                 if (word == "on" || word == "off") {
                     command = word;
                     hasValidCommand = true;
-
+                    
                     // Leggi i possibili orari dopo on/off
                     std::string startTime, stopTime;
                     restStream >> startTime;
@@ -117,13 +117,13 @@ int main() {
                                     int stopTimeMinutes = stopHours * 60 + stopMinutes;
                                     device->setTimer(startTimeMinutes, stopTimeMinutes);
                                     std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                                              << fullDeviceName << "' dalle " << startTime << " alle " << stopTime << "\n";
+                                            << fullDeviceName << "' dalle " << startTime << " alle " << stopTime << "\n";
                                     isTimerCommand = true;
                                 }
                             }
                         }
                     }
-
+                    
                     if (!isTimerCommand) {
                         manager.toggleDevice(fullDeviceName);
                         manager.checkPowerConsumption();
@@ -160,11 +160,11 @@ int main() {
                         int stopTime = stopHours * 60 + stopMinutes;
                         device->setTimer(startTime, stopTime);
                         std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                                  << fullDeviceName << "' dalle " << timeValues[0] << " alle " << timeValues[1] << "\n";
+                                << fullDeviceName << "' dalle " << timeValues[0] << " alle " << timeValues[1] << "\n";
                     } else {
                         device->setTimer(startTime);
                         std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                                  << fullDeviceName << "' alle " << timeValues[0] << "\n";
+                                << fullDeviceName << "' alle " << timeValues[0] << "\n";
                     }
                 } else {
                     std::cout << "[Error] Comando non valido per il dispositivo: " << fullDeviceName << "\n";
@@ -176,11 +176,11 @@ int main() {
             std::string deviceName;
             std::getline(iss, deviceName);
             if (deviceName.empty()) {
-                manager.printConsumption();
+                manager.showConsumption();
             } else {
                 deviceName = deviceName.substr(deviceName.find_first_not_of(" \t"));
                 if (!deviceName.empty()) {
-                    manager.printDeviceConsumption(deviceName);
+                    manager.showConsumption(deviceName);
                 }
             }
         }
@@ -195,6 +195,17 @@ int main() {
                 manager.resetAll();
             } else {
                 std::cout << "[Error] Comando reset non valido. Usa 'time', 'timers' o 'all'\n";
+            }
+        }
+        else if (action == "rm") {
+            std::string deviceName;
+            std::getline(iss, deviceName);
+            if (!deviceName.empty()) {
+                deviceName = deviceName.substr(deviceName.find_first_not_of(" \t"));
+                manager.removeDeviceTimer(deviceName);
+            } else {
+                std::cout << "[Error] Specificare il nome del dispositivo\n";
+                std::cout << "Uso: rm <nome_dispositivo>\n";
             }
         }
         else {
