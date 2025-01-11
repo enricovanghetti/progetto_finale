@@ -238,7 +238,7 @@ std::string DeviceManager::formatSpecificTime(int minutes) const {
 }
 
 void DeviceManager::updateDeviceConsumption(int newTime) {
-    double hours = (newTime - currentTime) / 60.0;
+    double hours = (newTime - lastUpdateTime) / 60.0;
     
     if (hours > 0) {
         for (const auto& device : devices) {
