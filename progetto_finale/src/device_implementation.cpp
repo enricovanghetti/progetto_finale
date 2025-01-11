@@ -24,13 +24,13 @@ void ManualDevice::update(int currentTime) {
             if (!isOn) {
                 isOn = true;
                 std::cout << "[" << formatTime(currentTime) << "] Il dispositivo '"
-                         << name << "' si è acceso automaticamente\n";
+                          << name << "' si è acceso automaticamente\n";
             }
         } else if (scheduledStopTime != -1 && currentTime == scheduledStopTime) {
             if (isOn) {
                 isOn = false;
                 std::cout << "[" << formatTime(currentTime) << "] Il dispositivo '"
-                         << name << "' si è spento automaticamente\n";
+                          << name << "' si è spento automaticamente\n";
             }
         }
     }
@@ -78,13 +78,13 @@ void FCDevice::update(int currentTime) {
         isOn = true;
         startTime = currentTime;
         std::cout << "[" << formatTime(currentTime) << "] Il dispositivo '"
-                 << name << "' si è acceso automaticamente\n";
+                  << name << "' si è acceso automaticamente\n";
     }
     else if (isOn) {
         if (startTime >= 0 && currentTime - startTime >= cycleDuration) {
             isOn = false;
             std::cout << "[" << formatTime(currentTime) << "] Il dispositivo '"
-                     << name << "' si è spento dopo il ciclo prefissato\n";
+                      << name << "' si è spento dopo il ciclo prefissato\n";
             clearTimer();
         }
     }
