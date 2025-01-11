@@ -24,11 +24,11 @@ public:
     void toggleDevice(const std::string& deviceName, int startAt = -1);
     void checkPowerConsumption();
     void setTime(const std::string& time);
-    void showConsumption(const std::string& deviceName = "") const; // Modifica qui
+    void showConsumption(const std::string& deviceName = "") const;
     void resetTime();
     void resetTimers();
     void resetAll();
-    void removeDeviceTimer(const std::string& deviceName); // Nuovo metodo
+    void removeDeviceTimer(const std::string& deviceName);
     std::string formatTime() const;
     std::shared_ptr<Device> findDevice(const std::string& deviceName) const;
     const std::vector<std::shared_ptr<Device>>& getDevices() const { return devices; }
@@ -36,9 +36,9 @@ public:
 private:
     std::string getCurrentTimeStamp() const;
     std::string formatSpecificTime(int minutes) const;
-    void updateDeviceConsumption();
+    void updateDeviceConsumption(int newTime);
     void initializeDeviceConsumption();
-    void printDeviceConsumption(const std::string& deviceName) const; // Aggiungi la dichiarazione qui
+    void printDeviceConsumption(const std::string& deviceName) const;
     
     static std::string toLowercase(const std::string& str) {
         std::string lower = str;
