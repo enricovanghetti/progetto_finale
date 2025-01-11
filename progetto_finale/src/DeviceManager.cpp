@@ -12,7 +12,6 @@ void DeviceManager::addDevice(const std::shared_ptr<Device>& device) {
     devices.push_back(device);
     deviceEnergyConsumption[device->getId()] = 0.0;
 }
-
 void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
     std::string searchName = toLowercase(deviceName);
     for (const auto& device : devices) {
@@ -21,29 +20,59 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
                 device->setTimer(startAt);
                 return;
             }
-            
-            bool wasOn = device->getStatus();
-            device->toggle();
-            
-            if (device->getStatus()) {
-                activeDevices[device->getId()] = device;
-                deviceActivationOrder.push_back(device);
-                std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
-                          << device->getName() << "' si è acceso" << std::endl;
-            } else {
-                if (wasOn) {
-                    updateDeviceConsumption(currentTime);
+
+            if (!device->getStatus()) {
+                // Calcola il consumo totale corrente
+                double totalConsumption = 0.0;
+                for (const auto& pair : activeDevices) {
+                    totalConsumption += pair.second->getPowerConsumption();
                 }
+
+                // Controlla il limite iterativamente
+                double newTotalConsumption = totalConsumption + device->getPowerConsumption();
+                while (newTotalConsumption > maxPowerLimit && !deviceActivationOrder.empty()) {
+                    auto lastDevice = deviceActivationOrder.back(); // Spegni il dispositivo più recente
+                    if (lastDevice->getName() != "photovoltaic system") {
+                        lastDevice->toggle();
+                        std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '"
+                                  << lastDevice->getName() << "' è stato spento automaticamente" << std::endl;
+
+                        activeDevices.erase(lastDevice->getId());
+                        deviceActivationOrder.pop_back();
+
+                        // Ricalcola il consumo totale
+                        newTotalConsumption = totalConsumption;
+                        for (const auto& pair : activeDevices) {
+                            newTotalConsumption += pair.second->getPowerConsumption();
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // Aggiungi e accendi il dispositivo dopo il controllo
+                if (newTotalConsumption <= maxPowerLimit) {
+                    device->toggle();
+                    activeDevices[device->getId()] = device;
+                    deviceActivationOrder.push_back(device);
+                    std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '"
+                              << device->getName() << "' si è acceso" << std::endl;
+                } else {
+                    std::cout << "[Error] Non è possibile accendere il dispositivo '"
+                              << device->getName() << "' senza superare il limite di potenza" << std::endl;
+                }
+            } else {
+                // Spegni il dispositivo se è già acceso
+                device->toggle();
+                std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '"
+                          << device->getName() << "' si è spento" << std::endl;
                 activeDevices.erase(device->getId());
-                auto it = std::find_if(deviceActivationOrder.begin(), deviceActivationOrder.end(),
-                    [&device](const std::shared_ptr<Device>& d) { return d->getId() == device->getId(); });
+                auto it = std::find(deviceActivationOrder.begin(), deviceActivationOrder.end(), device);
                 if (it != deviceActivationOrder.end()) {
                     deviceActivationOrder.erase(it);
                 }
-                std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
-                          << device->getName() << "' si è spento" << std::endl;
+                updateDeviceConsumption(currentTime);
             }
-            checkPowerConsumption(); // Aggiunto per controllare i consumi dopo ogni toggle
             return;
         }
     }
@@ -54,32 +83,35 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
     }
 }
 
+
 void DeviceManager::checkPowerConsumption() {
     double totalConsumption = 0.0;
     for (const auto& pair : activeDevices) {
         totalConsumption += pair.second->getPowerConsumption();
     }
-    
+
     if (totalConsumption > maxPowerLimit) {
         std::cout << "[" << getCurrentTimeStamp() << "] Warning: potenza massima superata (" 
                   << std::fixed << std::setprecision(1) << totalConsumption << "kW)" << std::endl;
         
-        for (auto it = deviceActivationOrder.rbegin(); it != deviceActivationOrder.rend(); ++it) {
-            if ((*it)->getName() != "photovoltaic system") {
-                (*it)->toggle();
+        // Spegni dispositivi più recenti per primi (LIFO)
+        while (totalConsumption > maxPowerLimit && !deviceActivationOrder.empty()) {
+            auto lastDevice = deviceActivationOrder.back();
+            if (lastDevice->getName() != "photovoltaic system") {
+                lastDevice->toggle();
                 std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
-                          << (*it)->getName() << "' è stato spento automaticamente" << std::endl;
+                          << lastDevice->getName() << "' è stato spento automaticamente" << std::endl;
                 
-                activeDevices.erase((*it)->getId());
-                
+                activeDevices.erase(lastDevice->getId());
+                deviceActivationOrder.pop_back();
+
+                // Ricalcola il consumo totale
                 totalConsumption = 0.0;
                 for (const auto& pair : activeDevices) {
                     totalConsumption += pair.second->getPowerConsumption();
                 }
-                
-                if (totalConsumption <= maxPowerLimit) {
-                    break;
-                }
+            } else {
+                break;
             }
         }
     }
