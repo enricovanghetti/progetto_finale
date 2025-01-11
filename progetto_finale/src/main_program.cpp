@@ -36,15 +36,15 @@ int main() {
 
     // Inizializzazione dei dispositivi
     manager.addDevice(std::make_shared<ManualDevice>("photovoltaic system", 1, -1.5));
-    manager.addDevice(std::make_shared<FCDevice>("washing machine", 2, 2.0, 1.8333));
-    manager.addDevice(std::make_shared<FCDevice>("dishwasher", 3, 1.5, 3.25));
+    manager.addDevice(std::make_shared<FCDevice>("washing machine", 2, 2.0, 2.0));
+    manager.addDevice(std::make_shared<FCDevice>("dishwasher", 3, 1.5, 1.5));
     manager.addDevice(std::make_shared<ManualDevice>("heat pump", 4, 2.0));
     manager.addDevice(std::make_shared<ManualDevice>("water heater", 5, 1.0));
     manager.addDevice(std::make_shared<ManualDevice>("fridge", 6, 0.4));
-    manager.addDevice(std::make_shared<FCDevice>("microwave", 7, 0.8, 0.0333));
-    manager.addDevice(std::make_shared<ManualDevice>("television", 8, 0.1));
-    manager.addDevice(std::make_shared<FCDevice>("dryer", 9, 1.8, 1.5));
-    manager.addDevice(std::make_shared<ManualDevice>("shutters", 10, 0.05));
+    manager.addDevice(std::make_shared<FCDevice>("microwave", 7, 0.8, 0.8));
+    manager.addDevice(std::make_shared<ManualDevice>("television", 8, 0.2));
+    manager.addDevice(std::make_shared<FCDevice>("dryer", 9, 1.8, 0.5));
+    manager.addDevice(std::make_shared<ManualDevice>("shutters", 10, 0.3));
 
     std::string command;
     while (true) {
