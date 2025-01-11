@@ -32,7 +32,7 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
                           << device->getName() << "' si è acceso" << std::endl;
             } else {
                 if (wasOn) {
-                    updateDeviceConsumption();
+                    updateDeviceConsumption(currentTime);
                 }
                 activeDevices.erase(device->getId());
                 auto it = std::find_if(deviceActivationOrder.begin(), deviceActivationOrder.end(),
@@ -43,6 +43,7 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
                 std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
                           << device->getName() << "' si è spento" << std::endl;
             }
+            checkPowerConsumption(); // Aggiunto per controllare i consumi dopo ogni toggle
             return;
         }
     }
@@ -95,14 +96,15 @@ void DeviceManager::setTime(const std::string& time) {
         
         // Aggiorna i consumi prima di cambiare l'ora
         if (newTime != currentTime) {
-            updateDeviceConsumption();
-            lastUpdateTime = currentTime;
-            currentTime = newTime;
-            
-            // Aggiorna lo stato dei dispositivi
-            for (const auto& device : devices) {
-                device->update(currentTime);
+            // Iteriamo attraverso ogni minuto tra l'ora corrente e la nuova ora
+            for (int t = currentTime; t <= newTime; ++t) {
+                updateDeviceConsumption(t);
+                // Aggiorna lo stato dei dispositivi
+                for (const auto& device : devices) {
+                    device->update(t);
+                }
             }
+            currentTime = newTime;
             
             // Aggiorna la mappa dei dispositivi attivi
             activeDevices.clear();
@@ -113,6 +115,7 @@ void DeviceManager::setTime(const std::string& time) {
                     deviceActivationOrder.push_back(device);
                 }
             }
+            checkPowerConsumption(); // Aggiunto per controllare i consumi dopo aver impostato l'ora
         }
 
         std::cout << "[" << getCurrentTimeStamp() << "] Ora impostata: " << time << std::endl;
@@ -234,8 +237,8 @@ std::string DeviceManager::formatSpecificTime(int minutes) const {
     return oss.str();
 }
 
-void DeviceManager::updateDeviceConsumption() {
-    double hours = (currentTime - lastUpdateTime) / 60.0;
+void DeviceManager::updateDeviceConsumption(int newTime) {
+    double hours = (newTime - currentTime) / 60.0;
     
     if (hours > 0) {
         for (const auto& device : devices) {
@@ -247,7 +250,7 @@ void DeviceManager::updateDeviceConsumption() {
             }
         }
     }
-    lastUpdateTime = currentTime;
+    lastUpdateTime = newTime;
 }
 
 void DeviceManager::initializeDeviceConsumption() {
