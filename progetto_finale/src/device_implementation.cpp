@@ -15,7 +15,7 @@ void ManualDevice::toggle() {
 }
 
 double ManualDevice::calculateConsumption(double hours) const {
-    return isOn ? powerConsumption * hours : 0.0;
+    return powerConsumption * hours;
 }
 
 void ManualDevice::update(int currentTime) {
@@ -71,12 +71,11 @@ void FCDevice::toggle() {
 }
 
 double FCDevice::calculateConsumption(double hours) const {
-    if (!isOn) return 0.0;
     return powerConsumption * std::min(hours, cycleDuration / 60.0);
 }
 
 void FCDevice::update(int currentTime) {
-    if (!isOn && hasTimerSet && currentTime == scheduledStartTime) {
+    if (!isOn && hasTimerSet && currentTime >= scheduledStartTime) {
         isOn = true;
         startTime = currentTime;
         std::cout << "[" << formatTime(currentTime) << "] Il dispositivo '"
