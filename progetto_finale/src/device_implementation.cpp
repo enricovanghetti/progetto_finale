@@ -20,13 +20,15 @@ double ManualDevice::calculateConsumption(double hours) const {
 
 void ManualDevice::update(int currentTime) {
     if (hasTimerSet) {
-        if (currentTime == scheduledStartTime) {
+        if (currentTime >= scheduledStartTime && (scheduledStopTime == -1 || currentTime < scheduledStopTime)) {
+            // Accendi il dispositivo se siamo nel range del timer
             if (!isOn) {
                 isOn = true;
                 std::cout << "[" << formatTime(currentTime) << "] Il dispositivo '"
                           << name << "' si è acceso automaticamente\n";
             }
-        } else if (scheduledStopTime != -1 && currentTime == scheduledStopTime) {
+        } else {
+            // Spegni il dispositivo se siamo fuori dal range del timer
             if (isOn) {
                 isOn = false;
                 std::cout << "[" << formatTime(currentTime) << "] Il dispositivo '"
