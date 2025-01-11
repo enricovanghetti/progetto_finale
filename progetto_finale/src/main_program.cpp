@@ -42,6 +42,9 @@ int main() {
     manager.addDevice(std::make_shared<ManualDevice>("water heater", 5, 1.0));
     manager.addDevice(std::make_shared<ManualDevice>("fridge", 6, 0.4));
     manager.addDevice(std::make_shared<FCDevice>("microwave", 7, 0.8, 0.0333));
+    manager.addDevice(std::make_shared<ManualDevice>("television", 8, 0.1));
+    manager.addDevice(std::make_shared<FCDevice>("dryer", 9, 1.8, 1.5));
+    manager.addDevice(std::make_shared<ManualDevice>("shutters", 10, 0.05));
 
     std::string command;
     while (true) {
@@ -98,7 +101,7 @@ int main() {
                 if (word == "on" || word == "off") {
                     command = word;
                     hasValidCommand = true;
-                    
+
                     // Leggi i possibili orari dopo on/off
                     std::string startTime, stopTime;
                     restStream >> startTime;
@@ -114,13 +117,13 @@ int main() {
                                     int stopTimeMinutes = stopHours * 60 + stopMinutes;
                                     device->setTimer(startTimeMinutes, stopTimeMinutes);
                                     std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                                            << fullDeviceName << "' dalle " << startTime << " alle " << stopTime << "\n";
+                                              << fullDeviceName << "' dalle " << startTime << " alle " << stopTime << "\n";
                                     isTimerCommand = true;
                                 }
                             }
                         }
                     }
-                    
+
                     if (!isTimerCommand) {
                         manager.toggleDevice(fullDeviceName);
                         manager.checkPowerConsumption();
@@ -157,11 +160,11 @@ int main() {
                         int stopTime = stopHours * 60 + stopMinutes;
                         device->setTimer(startTime, stopTime);
                         std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                                << fullDeviceName << "' dalle " << timeValues[0] << " alle " << timeValues[1] << "\n";
+                                  << fullDeviceName << "' dalle " << timeValues[0] << " alle " << timeValues[1] << "\n";
                     } else {
                         device->setTimer(startTime);
                         std::cout << "[" << manager.formatTime() << "] Impostato un timer per il dispositivo '"
-                                << fullDeviceName << "' alle " << timeValues[0] << "\n";
+                                  << fullDeviceName << "' alle " << timeValues[0] << "\n";
                     }
                 } else {
                     std::cout << "[Error] Comando non valido per il dispositivo: " << fullDeviceName << "\n";
