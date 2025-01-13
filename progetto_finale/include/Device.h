@@ -96,7 +96,12 @@ public:
     void setTimer(int start, int stop = -1) override;
     void clearTimer() override;
     bool hasTimer() const override { return hasTimerSet; }
+    
+    // Nuovi metodi
     double getCycleDuration() const { return cycleDuration; }
+    void setCycleDuration(int minutes) { cycleDuration = minutes; }
+    int getStartTime() const { return startTime; }
+    
     int getScheduledStartTime() const override;
 };
 
