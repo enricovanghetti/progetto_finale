@@ -118,3 +118,4 @@ void FCDevice::clearTimer() {
 int FCDevice::getScheduledStartTime() const {
     return scheduledStartTime;
 }
+
