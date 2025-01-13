@@ -34,7 +34,7 @@ bool DeviceManager::checkPowerForDevice(const std::shared_ptr<Device>& deviceToA
             --it; // Itera dal più recente al meno recente
             auto device = *it;
             // Non spegnere il dispositivo che stiamo cercando di accendere o il sistema fotovoltaico
-            if (device != deviceToAdd && device->getName() != "photovoltaic system") {
+            if (device != deviceToAdd && device->getName() != "Impianto fotovoltaico") {
                 device->toggle();
                 std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '" 
                           << device->getName() << "' è stato spento automaticamente" << std::endl;
@@ -71,13 +71,46 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
                     device->toggle();
                     activeDevices[device->getId()] = device;
                     deviceActivationOrder.push_back(device);
-                    std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '"
-                              << device->getName() << "' si è acceso" << std::endl;
+                    
+                    // Gestione dei dispositivi automatici
+                    if (auto* fc = dynamic_cast<FCDevice*>(device.get())) {
+                        int cycleMinutes = 0;
+                        
+                        if (device->getName() == "Lavatrice") {
+                            cycleMinutes = 110;
+                        } else if (device->getName() == "Lavastoviglie") {
+                            cycleMinutes = 195;
+                        } else if (device->getName() == "Tapparelle elettriche") {
+                            cycleMinutes = 1;
+                        } else if (device->getName() == "Forno a microonde") {
+                            cycleMinutes = 2;
+                        } else if (device->getName() == "Asciugatrice") {
+                            cycleMinutes = 60;
+                        } else if (device->getName() == "Televisore") {
+                            cycleMinutes = 60;
+                        }
+                        
+                        if (cycleMinutes > 0) {
+                            fc->setStartTime(currentTime); // Memorizza il tempo di inizio
+                            std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '"
+                                    << device->getName() << "' si è acceso e si spegnerà automaticamente dopo "
+                                    << (cycleMinutes / 60) << " ore e " << (cycleMinutes % 60) << " minuti\n";
+                            // Imposta la durata del ciclo nel dispositivo FC
+                            fc = dynamic_cast<FCDevice*>(device.get());
+                            if (fc) {
+                                fc->setCycleDuration(cycleMinutes);
+                            }
+                        }
+                    } else {
+                        // Dispositivo manuale
+                        std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '"
+                                << device->getName() << "' si è acceso\n";
+                    }
                 }
             } else {
                 device->toggle();
                 std::cout << "[" << getCurrentTimeStamp() << "] Il dispositivo '"
-                          << device->getName() << "' si è spento" << std::endl;
+                        << device->getName() << "' si è spento\n";
                 activeDevices.erase(device->getId());
                 auto it = std::find(deviceActivationOrder.begin(), deviceActivationOrder.end(), device);
                 if (it != deviceActivationOrder.end()) {
@@ -94,6 +127,7 @@ void DeviceManager::toggleDevice(const std::string& deviceName, int startAt) {
         std::cout << "- " << device->getName() << "\n";
     }
 }
+
 
 void DeviceManager::checkPowerConsumption() {
     if (isCheckingPower) return;
@@ -120,21 +154,45 @@ void DeviceManager::setTime(const std::string& time) {
     
     if (iss >> hours >> colon >> minutes && colon == ':' && 
         hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
-        int newTime = hours * 60 + minutes;
         
-        // Aggiorna i consumi prima di cambiare l'ora
+        std::cout << "[" << getCurrentTimeStamp() << "] L'orario attuale è " << formatSpecificTime(currentTime) << std::endl;
+
+        int newTime = hours * 60 + minutes;
+
         if (newTime != currentTime) {
-            // Iteriamo attraverso ogni minuto tra l'ora corrente e la nuova ora
             for (int t = currentTime; t <= newTime; ++t) {
                 updateDeviceConsumption(t);
-                // Aggiorna lo stato dei dispositivi
                 for (const auto& device : devices) {
+                    // Gestione dispositivi manuali con timer
                     device->update(t);
+                    
+                    // Gestione dispositivi automatici
+                    if (auto* fc = dynamic_cast<FCDevice*>(device.get())) {
+                        if (device->getStatus()) {
+                            int startTime = fc->getStartTime();
+                            if (startTime >= 0) {
+                                int elapsedMinutes = t - startTime;
+                                if (elapsedMinutes >= fc->getCycleDuration() && device->getStatus()) {
+                                    device->toggle(); // Spegni il dispositivo
+                                    activeDevices.erase(device->getId());
+                                    auto it = std::find(deviceActivationOrder.begin(), deviceActivationOrder.end(), device);
+                                    if (it != deviceActivationOrder.end()) {
+                                        deviceActivationOrder.erase(it);
+                                    }
+                                    int cycleDuration = fc->getCycleDuration();
+                                    std::cout << "[" << formatSpecificTime(t) << "] Il dispositivo '"
+                                            << device->getName() << "' ha completato il suo ciclo di "
+                                            << (cycleDuration / 60) << " ore e " << (cycleDuration % 60)
+                                            << " minuti ed è stato spento automaticamente\n";
+                                    fc->setStartTime(-1); // Resetta il tempo di inizio
+                                }
+                            }
+                        }
+                    }
                 }
             }
             currentTime = newTime;
-            
-            // Aggiorna la mappa dei dispositivi attivi
+
             activeDevices.clear();
             deviceActivationOrder.clear();
             for (const auto& device : devices) {
@@ -143,7 +201,7 @@ void DeviceManager::setTime(const std::string& time) {
                     deviceActivationOrder.push_back(device);
                 }
             }
-            checkPowerConsumption(); // Aggiunto per controllare i consumi dopo aver impostato l'ora
+            checkPowerConsumption();
         }
 
         std::cout << "[" << getCurrentTimeStamp() << "] Ora impostata: " << time << std::endl;
