@@ -1,34 +1,23 @@
 #include "../include/Device.h"
 
-std::string formatTime(int minutes) {
-    int hours = (minutes / 60) % 24;
-    int mins = minutes % 60;
-    std::ostringstream oss;
-    oss << std::setw(2) << std::setfill('0') << hours << ":"
-        << std::setw(2) << std::setfill('0') << mins;
-    return oss.str();
-}
-
 // ManualDevice implementations
 void ManualDevice::toggle() {
     isOn = !isOn;
 }
 
 double ManualDevice::calculateConsumption(double hours) const {
-    return powerConsumption * hours;
+    return isOn ? (powerConsumption * hours) : 0.0;
 }
 
 void ManualDevice::update(int currentTime) {
     if (hasTimerSet) {
         if (currentTime >= scheduledStartTime && (scheduledStopTime == -1 || currentTime < scheduledStopTime)) {
-            // Accendi il dispositivo se siamo nel range del timer
             if (!isOn) {
                 isOn = true;
                 std::cout << "[" << formatTime(currentTime) << "] Il dispositivo '"
                           << name << "' si è acceso automaticamente\n";
             }
         } else {
-            // Spegni il dispositivo se siamo fuori dal range del timer
             if (isOn) {
                 isOn = false;
                 std::cout << "[" << formatTime(currentTime) << "] Il dispositivo '"
@@ -37,6 +26,7 @@ void ManualDevice::update(int currentTime) {
         }
     }
 }
+
 
 void ManualDevice::printStatus() const {
     std::cout << "Device: " << name << " (Manual) - Status: "
@@ -62,6 +52,14 @@ void ManualDevice::clearTimer() {
     scheduledStopTime = -1;
 }
 
+int ManualDevice::getScheduledStartTime() const {
+    return scheduledStartTime;
+}
+
+int ManualDevice::getScheduledStopTime() const {
+    return scheduledStopTime;
+}
+
 // FCDevice implementations
 void FCDevice::toggle() {
     isOn = !isOn;
@@ -71,7 +69,7 @@ void FCDevice::toggle() {
 }
 
 double FCDevice::calculateConsumption(double hours) const {
-    return powerConsumption * std::min(hours, cycleDuration / 60.0);
+    return isOn ? (powerConsumption * std::min(hours, cycleDuration / 60.0)) : 0.0;
 }
 
 void FCDevice::update(int currentTime) {
@@ -115,4 +113,8 @@ void FCDevice::clearTimer() {
     hasTimerSet = false;
     scheduledStartTime = -1;
     startTime = -1;
+}
+
+int FCDevice::getScheduledStartTime() const {
+    return scheduledStartTime;
 }
