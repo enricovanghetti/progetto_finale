@@ -64,9 +64,9 @@ int main() {
             if (secondWord.empty()) {
                 std::cout << "[Error] Comando 'set' richiede un dispositivo o 'time'. Dispositivi disponibili:\n";
                 for (const auto& device : manager.getDevices()) {
-                    std::cout << "- " << device->getName() << "\n";
+                std::cout << "- " << device->getName() << "\n";
                 }
-                continue;
+            continue;
             }
 
             // Gestione del comando "set time"
@@ -83,6 +83,7 @@ int main() {
                 }
                 continue;
             }
+        
 
             // Leggi il resto della riga per il nome del dispositivo e il comando
             std::string restOfLine;
@@ -126,7 +127,6 @@ int main() {
                     
                     if (!isTimerCommand) {
                         manager.toggleDevice(fullDeviceName);
-                        manager.checkPowerConsumption();
                     }
                     break;
                 } else if (isTimeFormat(word)) {
