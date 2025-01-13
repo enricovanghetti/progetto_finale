@@ -16,6 +16,7 @@ class DeviceManager {
     double maxPowerLimit;
     int currentTime;
     int lastUpdateTime;
+    bool isCheckingPower;  // Nuovo flag per evitare chiamate ricorsive
 
 public:
     explicit DeviceManager(double maxPowerLimit);
@@ -39,6 +40,7 @@ private:
     void updateDeviceConsumption(int newTime);
     void initializeDeviceConsumption();
     void printDeviceConsumption(const std::string& deviceName) const;
+    bool checkPowerForDevice(const std::shared_ptr<Device>& deviceToAdd);
     
     static std::string toLowercase(const std::string& str) {
         std::string lower = str;
