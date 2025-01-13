@@ -7,7 +7,15 @@
 #include <sstream>
 #include <iomanip>
 
-std::string formatTime(int minutes);
+// Inline implementation of formatTime
+inline std::string formatTime(int minutes) {
+    int hours = minutes / 60;
+    int mins = minutes % 60;
+    std::ostringstream oss;
+    oss << std::setw(2) << std::setfill('0') << hours << ":"
+        << std::setw(2) << std::setfill('0') << mins;
+    return oss.str();
+}
 
 class Device {
 protected:
@@ -30,10 +38,15 @@ public:
     virtual void clearTimer() = 0;
     virtual bool hasTimer() const = 0;
 
+    virtual int getScheduledStartTime() const { return -1; }
+    virtual int getScheduledStopTime() const { return -1; }
+
     bool getStatus() const { return isOn; }
     const std::string& getName() const { return name; }
     int getId() const { return id; }
     double getPowerConsumption() const { return isOn ? powerConsumption : 0.0; }
+
+    friend class DeviceManager;
 };
 
 class ManualDevice : public Device {
@@ -56,8 +69,8 @@ public:
     void setTimer(int start, int stop = -1) override;
     void clearTimer() override;
     bool hasTimer() const override { return hasTimerSet; }
-    int getScheduledStartTime() const { return scheduledStartTime; }
-    int getScheduledStopTime() const { return scheduledStopTime; }
+    int getScheduledStartTime() const override;
+    int getScheduledStopTime() const override;
 };
 
 class FCDevice : public Device {
@@ -84,6 +97,7 @@ public:
     void clearTimer() override;
     bool hasTimer() const override { return hasTimerSet; }
     double getCycleDuration() const { return cycleDuration; }
+    int getScheduledStartTime() const override;
 };
 
 #endif
