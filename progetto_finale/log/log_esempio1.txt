@@ -1,0 +1,86 @@
+>> set televisore on
+[00:00] Il dispositivo 'Televisore' si è acceso e si spegnerà automaticamente dopo 1 ore e 0 minuti
+>> set time 1:00
+[00:00] L'orario attuale è 00:00
+[01:00] Il dispositivo 'Televisore' si è spento dopo il ciclo prefissato
+[01:00] Ora impostata: 1:00
+>> show televisore
+[01:00] Consumo Televisore: 0.20 kWh
+>> set time 2:00
+[01:00] L'orario attuale è 01:00
+[02:00] Ora impostata: 2:00
+>> show televisore
+[02:00] Consumo Televisore: 0.20 kWh >> set frigorifero on 12:00 15:00
+[02:00] Impostato un timer per il dispositivo 'frigorifero' dalle 12:00 alle 15:00
+>> set time 13:00
+[02:00] L'orario attuale è 02:00
+[12:00] Il dispositivo 'Frigorifero' si è acceso automaticamente
+[13:00] Ora impostata: 13:00
+>> show
+[13:00] Consumo energetico:
+Impianto fotovoltaico: 0.00 kWh
+Pompa di calore con termostato: 0.00 kWh
+Scaldabagno: 0.00 kWh
+Frigorifero: 0.40 kWh
+Tapparelle elettriche: 0.00 kWh
+Lavatrice: 0.00 kWh
+Lavastoviglie: 0.00 kWh
+Forno a microonde: 0.00 kWh
+Asciugatrice: 0.00 kWh
+Televisore: 0.20 kWh
+Consumo totale: 0.60 kWh
+>> set time 16:00
+[13:00] L'orario attuale è 13:00
+[15:00] Il dispositivo 'Frigorifero' si è spento automaticamente
+[16:00] Ora impostata: 16:00
+>> show
+[16:00] Consumo energetico:
+Impianto fotovoltaico: 0.00 kWh
+Pompa di calore con termostato: 0.00 kWh
+Scaldabagno: 0.00 kWh
+Frigorifero: 1.20 kWh
+Tapparelle elettriche: 0.00 kWh
+Lavatrice: 0.00 kWh
+Lavastoviglie: 0.00 kWh
+Forno a microonde: 0.00 kWh
+Asciugatrice: 0.00 kWh
+Televisore: 0.20 kWh
+Consumo totale: 1.40 kWh
+>> set pompa di calore con termostato on 17:00
+[16:00] Il dispositivo 'Pompa di calore con termostato' si è spento
+>> rm pompa di calore con termostato
+[16:00] Timer rimosso per il dispositivo 'pompa di calore con termostato'
+>> set time 17:00
+[16:00] L'orario attuale è 16:00
+[17:00] Ora impostata: 17:00
+>> show pompa di calore con termostato
+[17:00] Consumo Pompa di calore con termostato: 0.00 kWh >> set lavastoviglie on
+[17:00] Il dispositivo 'Lavastoviglie' si è acceso e si spegnerà automaticamente dopo 3 ore e 15 minuti
+>> set lavastoviglie off
+[17:00] Il dispositivo 'Lavastoviglie' si è spento
+>> set time 18:00
+[17:00] L'orario attuale è 17:00
+[18:00] Ora impostata: 18:00
+>> show lavastoviglie
+[18:00] Consumo Lavastoviglie: 0.00 kWh >> set lavatrice on 13:00 15:00
+[13:00] Impostato un timer per il dispositivo 'lavatrice' dalle 13:00 alle 15:00
+>> set time 14:00
+[13:00] L'orario attuale è 13:00
+[13:00] Il dispositivo 'Lavatrice' si è acceso automaticamente
+[14:00] Ora impostata: 14:00
+>> reset time
+[00:00] Ora reimpostata a 00:00
+>> set lavatrice on 13:00 15:00
+[00:00] Impostato un timer per il dispositivo 'lavatrice' dalle 13:00 alle 15:00
+>> reset timers
+[00:00] Timer cancellati
+>> set lavatrice on
+[14:00] Il dispositivo 'Lavatrice' si è spento
+>> set lavastoviglie on
+[14:00] Il dispositivo 'Lavastoviglie' si è acceso e si spegnerà automaticamente dopo 3 ore e 15 minuti
+>> set televisore on
+[14:00] Il dispositivo 'Televisore' si è acceso e si spegnerà automaticamente dopo 1 ore e 0 minuti
+>> set lavatrice on
+[14:00] Warning: potenza massima superata (3.7kW)
+[14:00] Il dispositivo 'Televisore' è stato spento automaticamente
+[14:00] Il dispositivo 'Lavatrice' si è acceso e si spegnerà automaticamente dopo 1 ore e 50 minuti

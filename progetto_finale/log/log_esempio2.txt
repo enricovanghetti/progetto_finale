@@ -1,0 +1,38 @@
+>> Input: se
+[Error] Comando non riconosciuto: se
+>> Input: set frigo
+[Error] Dispositivo non trovato: frigo
+Dispositivi disponibili:
+- Impianto fotovoltaico
+- Pompa di calore con termostato
+- Scaldabagno
+- Frigorifero
+- Tapparelle elettriche
+- Lavatrice
+- Lavastoviglie
+- Forno a microonde
+- Asciugatrice
+- Televisore
+>> Input: set time 99:00
+[Error] Formato tempo non valido. Usa HH:MM
+>> Input: reset all
+[00:00] Sistema reimpostato
+>> Input: set lavatrice on
+[00:00] Il dispositivo 'Lavatrice' si è acceso e si spegnerà automaticamente dopo 1 ore e 50 minuti
+>> Input: set lavastoviglie on
+[00:00] Il dispositivo 'Lavastoviglie' si è acceso e si spegnerà automaticamente dopo 3 ore e 15 minuti
+>> Input: set frigorifero on
+[00:00] Warning: potenza massima superata (3.9kW)
+[00:00] Il dispositivo 'Lavastoviglie' è stato spento automaticamente
+[00:00] Il dispositivo 'Frigorifero' si è acceso
+>> Input: set time 13:00
+[00:00] L'orario attuale è 00:00
+[01:50] Il dispositivo 'Lavatrice' si è spento dopo il ciclo prefissato
+[13:00] Ora impostata: 13:00
+>> Input: set time 12:00
+[13:00] L'orario attuale è 13:00
+[Error] Non è possibile impostare un orario precedente a quello attuale.
+>> Input: set time -1:-1
+[Error] Formato tempo non valido. Usa HH:MM
+>> Input: reset timer
+[Error] Comando reset non valido. Usa 'time', 'timers' o 'all'
