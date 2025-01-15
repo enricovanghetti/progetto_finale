@@ -24,13 +24,13 @@ SistemaDomotico
 
 Per problemi di tempo non siamo risuciti a suddividere in maniera più ordinata i vari file.
 La nostra idea originale era quella di creare anche un TimeManager e un ConsumptionManager per alleggerire file come DeviceManager.cpp.
-Sempre per problemi di tempo nel file CommandManager.h è presente anche l'implemnetazione dei metodi e non solo la dichiarazione, avremo dvouto separare le due cose.
+Sempre per problemi di tempo nel file CommandManager.h è presente anche l'implementazione dei metodi e non solo la dichiarazione, avremo dvouto separare le due cose.
 
-Il file CMakeLists.txt permette di compilare sia su macos (testato su Sequoia 15.1.1) che Linux (testato su Ubuntu 22.04 ARM64).
+Il file CMakeLists.txt permette di compilare sia su macOS (testato su Sequoia 15.1.1) che Linux (testato su Ubuntu 22.04 ARM64).
 
-Il progetto utilizza solo la libreria standard ed è scritto intermanete in c++11.
+Il progetto utilizza solo la libreria standard ed è scritto interamente in c++11.
 
-Ci sono alcune implementazioi possibili a cui avevamo pensato ma che non erano richieste dal progetto come ad esempio la gestione del timer solo di accensione.
-Se io infatti scrivo ad esempio 'set <deviceName(che sia manuale o a spegnimento automatico)> on HH:MM HH:MM' lo accenderà al primo orario e lo spegnerà al secondo 
-(a meno che non si tratti di un dispsoitvo a spegnimento automatico e il tempo che passa tra i due orari, di accensione e spegnimento, sia maggiore della durata del ciclo, in quel caso si spgenrà al termine del suo ciclo). 
-Se invece scrivo 'set <deviceName> on HH:MM' , attualemnte non viene gestito, prende comunque il comando per buono ma in relatà accende il dispositivo all'orario attuale.
+Ci sono alcune implementazioni possibili a cui avevamo pensato ma che non erano richieste dal progetto come ad esempio la gestione del timer solo di accensione.
+Se si scrive ad esempio 'set <deviceName(che sia manuale o a spegnimento automatico)> on HH:MM HH:MM' lo accenderà al primo orario e lo spegnerà al secondo 
+(a meno che non si tratti di un dispositivo a spegnimento automatico e il tempo che passa tra i due orari, di accensione e spegnimento, sia maggiore della durata del ciclo, in quel caso si spegnerà al termine del suo ciclo). 
+Se invece scrivo 'set <deviceName> on HH:MM' , attualmente non viene gestito, prende comunque il comando per buono ma in relatà accende il dispositivo all'orario attuale.
